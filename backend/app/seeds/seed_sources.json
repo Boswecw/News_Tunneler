@@ -1,0 +1,55 @@
+{
+  "sources": [
+    {
+      "name": "SEC EDGAR - Apple",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000320193&type=8-K&dateb=&owner=exclude&count=100&search_text=",
+      "type": "rss"
+    },
+    {
+      "name": "SEC EDGAR - Microsoft",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000789019&type=8-K&dateb=&owner=exclude&count=100&search_text=",
+      "type": "rss"
+    },
+    {
+      "name": "PR Newswire - Technology",
+      "url": "https://www.prnewswire.com/rss/technology-news.rss",
+      "type": "rss"
+    },
+    {
+      "name": "GlobeNewswire - Technology",
+      "url": "https://www.globenewswire.com/feed/tag/technology/rss",
+      "type": "rss"
+    },
+    {
+      "name": "BusinessWire - Deals",
+      "url": "https://www.businesswire.com/portal/site/home/rss/?rss=deals",
+      "type": "rss"
+    },
+    {
+      "name": "NASDAQ Earnings Calendar",
+      "url": "https://www.nasdaq.com/feed/rss/nasdaq-earnings-calendar",
+      "type": "rss"
+    },
+    {
+      "name": "FDA CDER News",
+      "url": "https://www.fda.gov/about-fda/fda-basics/rss-feeds",
+      "type": "rss"
+    },
+    {
+      "name": "Yahoo Finance - Top Stories",
+      "url": "https://feeds.finance.yahoo.com/rss/2.0/headline",
+      "type": "rss"
+    },
+    {
+      "name": "Reuters - Business",
+      "url": "https://feeds.reuters.com/reuters/businessNews",
+      "type": "rss"
+    },
+    {
+      "name": "Bloomberg - Markets",
+      "url": "https://feeds.bloomberg.com/markets/news.rss",
+      "type": "rss"
+    }
+  ]
+}
+

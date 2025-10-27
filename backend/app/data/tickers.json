@@ -1,0 +1,15 @@
+{
+  "symbols": [
+    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "INTC", "QCOM", "AMD",
+    "ADBE", "CRM", "ORCL", "PYPL", "WORK", "ZM", "NFLX", "UBER", "LYFT", "SNAP",
+    "TWTR", "PINS", "ROKU", "SPOT", "DASH", "DOCU", "ZOOM", "OKTA", "CRWD", "NET",
+    "DDOG", "SNOW", "PLTR", "COIN", "RIOT", "MARA", "CLSK", "MSTR", "GBTC", "IBIT",
+    "JPM", "BAC", "WFC", "GS", "MS", "BLK", "SCHW", "IBKR", "COIN", "HOOD",
+    "JNJ", "PFE", "MRNA", "BNTX", "VRTX", "REGN", "BIIB", "AMGN", "GILD", "CELG",
+    "XOM", "CVX", "COP", "MPC", "PSX", "VLO", "HES", "EOG", "SLB", "HAL",
+    "BA", "LMT", "RTX", "NOC", "GD", "TXT", "HII", "KTOS", "RKLB", "MAXR",
+    "WMT", "TGT", "COST", "AMZN", "MCD", "SBUX", "YUM", "CMG", "DASH", "DKNG",
+    "TSLA", "F", "GM", "TM", "HMC", "VWAGY", "BMW", "RACE", "NIO", "LI"
+  ]
+}
+

@@ -1,0 +1,185 @@
+{
+  "articles": [
+    {
+      "title": "Apple (AAPL) Files 8-K: Major Acquisition Announced",
+      "summary": "Apple Inc. has announced a significant acquisition in the AI space, filing an 8-K with the SEC. The deal is expected to accelerate product development.",
+      "source_name": "SEC EDGAR - Apple",
+      "source_url": "https://www.sec.gov",
+      "source_type": "rss",
+      "url": "https://example.com/apple-acquisition-1",
+      "ticker_guess": "AAPL"
+    },
+    {
+      "title": "Microsoft (MSFT) Beats Q4 Earnings Expectations",
+      "summary": "Microsoft reported Q4 earnings that exceeded analyst expectations by 15%, driven by strong cloud growth and AI services.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/msft-earnings-1",
+      "ticker_guess": "MSFT"
+    },
+    {
+      "title": "FDA Grants Breakthrough Designation for Novel Cancer Treatment",
+      "summary": "The FDA has granted breakthrough therapy designation to a new cancer immunotherapy, accelerating its path to approval.",
+      "source_name": "FDA CDER News",
+      "source_url": "https://www.fda.gov",
+      "source_type": "rss",
+      "url": "https://example.com/fda-cancer-1",
+      "ticker_guess": null
+    },
+    {
+      "title": "Tesla (TSLA) Announces New Manufacturing Partnership",
+      "summary": "Tesla has announced a strategic partnership with a major automotive supplier to expand production capacity.",
+      "source_name": "GlobeNewswire - Technology",
+      "source_url": "https://www.globenewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/tesla-partnership-1",
+      "ticker_guess": "TSLA"
+    },
+    {
+      "title": "Merger: Tech Company Acquires Competitor for $2B",
+      "summary": "In a major industry consolidation move, a leading tech company has agreed to acquire a competitor for $2 billion.",
+      "source_name": "BusinessWire - Deals",
+      "source_url": "https://www.businesswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/merger-1",
+      "ticker_guess": null
+    },
+    {
+      "title": "Amazon (AMZN) Launches New Cloud Service",
+      "summary": "Amazon Web Services announced a new cloud computing service targeting enterprise customers, with early adoption from major corporations.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/amazon-cloud-1",
+      "ticker_guess": "AMZN"
+    },
+    {
+      "title": "Google (GOOGL) Faces Antitrust Investigation",
+      "summary": "Regulatory authorities have launched a formal investigation into Google's business practices, citing concerns about market dominance.",
+      "source_name": "Reuters - Business",
+      "source_url": "https://feeds.reuters.com",
+      "source_type": "rss",
+      "url": "https://example.com/google-antitrust-1",
+      "ticker_guess": "GOOGL"
+    },
+    {
+      "title": "Nvidia (NVDA) Reports Record GPU Sales",
+      "summary": "Nvidia announced record sales of AI accelerator chips, with demand far exceeding supply as enterprises rush to build AI infrastructure.",
+      "source_name": "Bloomberg - Markets",
+      "source_url": "https://feeds.bloomberg.com",
+      "source_type": "rss",
+      "url": "https://example.com/nvidia-sales-1",
+      "ticker_guess": "NVDA"
+    },
+    {
+      "title": "Meta (META) Announces Stock Buyback Program",
+      "summary": "Meta Platforms announced a $25 billion stock buyback program, signaling confidence in the company's long-term prospects.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/meta-buyback-1",
+      "ticker_guess": "META"
+    },
+    {
+      "title": "Intel (INTC) Misses Guidance, Stock Falls",
+      "summary": "Intel reported lower-than-expected guidance for the next quarter, citing weakness in PC market and delayed product launches.",
+      "source_name": "Yahoo Finance - Top Stories",
+      "source_url": "https://feeds.finance.yahoo.com",
+      "source_type": "rss",
+      "url": "https://example.com/intel-miss-1",
+      "ticker_guess": "INTC"
+    },
+    {
+      "title": "Biotech Company Enters Phase 3 Clinical Trial",
+      "summary": "A leading biotech company has advanced its experimental drug to Phase 3 clinical trials, a major milestone in drug development.",
+      "source_name": "GlobeNewswire - Technology",
+      "source_url": "https://www.globenewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/biotech-phase3-1",
+      "ticker_guess": null
+    },
+    {
+      "title": "Oracle (ORCL) Signs Major Cloud Contract",
+      "summary": "Oracle announced a multi-year cloud services contract with a Fortune 500 company, expanding its enterprise customer base.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/oracle-contract-1",
+      "ticker_guess": "ORCL"
+    },
+    {
+      "title": "Semiconductor Shortage Eases, Prices Decline",
+      "summary": "Industry analysts report that the global semiconductor shortage is easing, with prices beginning to decline for the first time in months.",
+      "source_name": "Reuters - Business",
+      "source_url": "https://feeds.reuters.com",
+      "source_type": "rss",
+      "url": "https://example.com/chip-shortage-1",
+      "ticker_guess": null
+    },
+    {
+      "title": "PayPal (PYPL) Expands Cryptocurrency Services",
+      "summary": "PayPal announced expansion of its cryptocurrency offerings, allowing customers to buy, sell, and hold digital assets.",
+      "source_name": "Bloomberg - Markets",
+      "source_url": "https://feeds.bloomberg.com",
+      "source_type": "rss",
+      "url": "https://example.com/paypal-crypto-1",
+      "ticker_guess": "PYPL"
+    },
+    {
+      "title": "Qualcomm (QCOM) Wins Major Smartphone Contract",
+      "summary": "Qualcomm secured a major contract to supply processors for next-generation smartphones from a leading manufacturer.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/qualcomm-contract-1",
+      "ticker_guess": "QCOM"
+    },
+    {
+      "title": "Cybersecurity Firm Discovers Major Vulnerability",
+      "summary": "A critical security vulnerability has been discovered affecting millions of devices worldwide, prompting urgent patches.",
+      "source_name": "GlobeNewswire - Technology",
+      "source_url": "https://www.globenewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/security-vuln-1",
+      "ticker_guess": null
+    },
+    {
+      "title": "Adobe (ADBE) Acquires Design Software Startup",
+      "summary": "Adobe announced the acquisition of a promising design software startup to enhance its creative suite offerings.",
+      "source_name": "BusinessWire - Deals",
+      "source_url": "https://www.businesswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/adobe-acq-1",
+      "ticker_guess": "ADBE"
+    },
+    {
+      "title": "Salesforce (CRM) Expands AI Capabilities",
+      "summary": "Salesforce announced new AI-powered features for its CRM platform, aimed at improving customer relationship management.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/salesforce-ai-1",
+      "ticker_guess": "CRM"
+    },
+    {
+      "title": "Zoom (ZM) Reports Strong User Growth",
+      "summary": "Zoom reported strong user growth and revenue expansion, driven by enterprise adoption and new product features.",
+      "source_name": "Yahoo Finance - Top Stories",
+      "source_url": "https://feeds.finance.yahoo.com",
+      "source_type": "rss",
+      "url": "https://example.com/zoom-growth-1",
+      "ticker_guess": "ZM"
+    },
+    {
+      "title": "Slack (WORK) Announces New Integration Partners",
+      "summary": "Slack announced partnerships with major enterprise software providers to expand its integration ecosystem.",
+      "source_name": "PR Newswire - Technology",
+      "source_url": "https://www.prnewswire.com",
+      "source_type": "rss",
+      "url": "https://example.com/slack-partners-1",
+      "ticker_guess": "WORK"
+    }
+  ]
+}
+
