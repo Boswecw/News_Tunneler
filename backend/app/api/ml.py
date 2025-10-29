@@ -11,6 +11,8 @@ from app.core.db import get_db_context
 from app.models.ml_model import MLModel
 from app.ml.training_pipeline import MLTrainingPipeline
 from app.ml.advanced_models import AdvancedMLTrainer
+from app.ml.monitoring import ModelMonitor
+from app.ml.ab_testing import ABTest
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +40,14 @@ class PredictResponse(BaseModel):
     probability: float
     model_version: str
     model_type: str
+
+
+class ABTestRequest(BaseModel):
+    """Request model for A/B test."""
+    model_a_version: str
+    model_b_version: str
+    traffic_split: float = 0.5
+    name: Optional[str] = None
 
 
 # Global trainer instance (loaded on demand)
@@ -330,32 +340,171 @@ def get_feature_importance(version: Optional[str] = None, top_n: int = 20):
 def delete_model(version: str):
     """
     Delete a model.
-    
+
     Args:
         version: Model version to delete
     """
     with get_db_context() as db:
         model = db.query(MLModel).filter(MLModel.version == version).first()
-        
+
         if model is None:
             raise HTTPException(status_code=404, detail=f"Model {version} not found")
-        
+
         if model.is_active:
             raise HTTPException(
                 status_code=400,
                 detail="Cannot delete active model. Activate another model first."
             )
-        
+
         # Delete model file
         import os
         if os.path.exists(model.model_path):
             os.remove(model.model_path)
-        
+
         # Delete from database
         db.delete(model)
         db.commit()
-        
+
         logger.info(f"Deleted model: {version}")
-        
+
         return {"message": f"Model {version} deleted"}
+
+
+@router.get("/monitor/accuracy")
+def get_model_accuracy(version: Optional[str] = None, days_back: int = 7):
+    """
+    Get model accuracy metrics.
+
+    Args:
+        version: Model version (None = active model)
+        days_back: Number of days to analyze
+    """
+    try:
+        monitor = ModelMonitor(model_version=version)
+        metrics = monitor.calculate_accuracy(days_back=days_back)
+        return metrics
+    except Exception as e:
+        logger.error(f"Failed to get accuracy: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/monitor/drift")
+def get_feature_drift(
+    version: Optional[str] = None,
+    days_back: int = 7,
+    reference_days: int = 30,
+    threshold: float = 0.1
+):
+    """
+    Get feature drift metrics.
+
+    Args:
+        version: Model version (None = active model)
+        days_back: Recent period to analyze
+        reference_days: Reference period for comparison
+        threshold: Drift threshold
+    """
+    try:
+        monitor = ModelMonitor(model_version=version)
+        metrics = monitor.detect_feature_drift(
+            days_back=days_back,
+            reference_days=reference_days,
+            threshold=threshold
+        )
+        return metrics
+    except Exception as e:
+        logger.error(f"Failed to get drift: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/monitor/confidence-trend")
+def get_confidence_trend(
+    version: Optional[str] = None,
+    days_back: int = 30,
+    bucket_size: int = 1
+):
+    """
+    Get prediction confidence trend.
+
+    Args:
+        version: Model version (None = active model)
+        days_back: Number of days to analyze
+        bucket_size: Size of time buckets in days
+    """
+    try:
+        monitor = ModelMonitor(model_version=version)
+        trend = monitor.get_prediction_confidence_trend(
+            days_back=days_back,
+            bucket_size=bucket_size
+        )
+        return trend
+    except Exception as e:
+        logger.error(f"Failed to get confidence trend: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/monitor/summary")
+def get_performance_summary(version: Optional[str] = None, days_back: int = 7):
+    """
+    Get comprehensive performance summary.
+
+    Args:
+        version: Model version (None = active model)
+        days_back: Number of days to analyze
+    """
+    try:
+        monitor = ModelMonitor(model_version=version)
+        summary = monitor.get_performance_summary(days_back=days_back)
+        return summary
+    except Exception as e:
+        logger.error(f"Failed to get summary: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ab-test/compare")
+def compare_ab_test(request: ABTestRequest, days_back: int = 7):
+    """
+    Compare two models in A/B test.
+
+    Args:
+        request: A/B test configuration
+        days_back: Number of days to analyze
+    """
+    try:
+        ab_test = ABTest(
+            model_a_version=request.model_a_version,
+            model_b_version=request.model_b_version,
+            traffic_split=request.traffic_split,
+            name=request.name
+        )
+
+        results = ab_test.compare_performance(days_back=days_back)
+        return results
+    except Exception as e:
+        logger.error(f"A/B test failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ab-test/traffic")
+def get_ab_traffic(request: ABTestRequest, days_back: int = 7):
+    """
+    Get traffic distribution for A/B test.
+
+    Args:
+        request: A/B test configuration
+        days_back: Number of days to analyze
+    """
+    try:
+        ab_test = ABTest(
+            model_a_version=request.model_a_version,
+            model_b_version=request.model_b_version,
+            traffic_split=request.traffic_split,
+            name=request.name
+        )
+
+        distribution = ab_test.get_traffic_distribution(days_back=days_back)
+        return distribution
+    except Exception as e:
+        logger.error(f"Failed to get traffic distribution: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 

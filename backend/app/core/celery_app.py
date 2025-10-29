@@ -23,6 +23,7 @@ celery_app.autodiscover_tasks([
     "app.tasks.llm_tasks",
     "app.tasks.rss_tasks",
     "app.tasks.digest_tasks",
+    "app.tasks.ml_tasks",
 ], force=True)
 
 # Celery configuration
@@ -54,6 +55,7 @@ celery_app.conf.update(
         "app.tasks.llm_tasks.*": {"queue": "llm"},
         "app.tasks.rss_tasks.*": {"queue": "rss"},
         "app.tasks.digest_tasks.*": {"queue": "digest"},
+        "app.tasks.ml_tasks.*": {"queue": "llm"},  # ML tasks use LLM queue
     },
     
     # Task retry configuration
@@ -78,6 +80,12 @@ celery_app.conf.update(
         "cleanup-old-signals": {
             "task": "app.tasks.rss_tasks.cleanup_old_signals",
             "schedule": crontab(hour=0, minute=0),  # Midnight UTC
+        },
+
+        # Retrain ML models daily at 2 AM UTC
+        "retrain-ml-models": {
+            "task": "ml.scheduled_retrain",
+            "schedule": crontab(hour=2, minute=0),  # 2:00 AM UTC
         },
     },
 )
@@ -177,7 +185,7 @@ def task_success_handler(sender=None, result=None, **extra):
 
 # Import tasks to register them
 try:
-    from app.tasks import llm_tasks, rss_tasks, digest_tasks
+    from app.tasks import llm_tasks, rss_tasks, digest_tasks, ml_tasks
     logger.info("Tasks imported successfully")
 except ImportError as e:
     logger.warning(f"Could not import tasks: {e}")

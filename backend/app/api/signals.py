@@ -16,6 +16,7 @@ from app.core.logging import logger
 from app.core.market_hours import is_market_hours
 from app.middleware.rate_limit import limiter
 from app.core.cache import cache_result
+from app.ml.signal_scoring import score_signal_with_ml, get_ml_status
 from zoneinfo import ZoneInfo
 import pandas as pd
 import yfinance as yf
@@ -172,20 +173,38 @@ def ingest_article(payload: Dict = Body(...)):
             all_features["earnings_in_days"] = 999  # TODO: integrate earnings calendar
             all_features["sector_momo_pct"] = 0.5   # TODO: integrate sector data
             
-            # Calculate score
+            # Calculate base score
             score_result = strong_score(all_features)
-            
+
+            # Enhance with ML (if enabled)
+            ml_result = score_signal_with_ml(
+                symbol=symbol,
+                base_features=all_features,
+                base_score=score_result["score"],
+                base_label=score_result["label"],
+                use_feature_engineering=True,
+                ml_weight=0.3
+            )
+
             # Build signal
             signal = {
                 "symbol": symbol,
                 "article_id": article_id,
                 "confidence": match["confidence"],
                 "match_type": match["match_type"],
-                "features": all_features,
-                "score": score_result["score"],
-                "label": score_result["label"],
+                "features": ml_result.get("features", all_features),
+                "score": ml_result["score"],
+                "label": ml_result["label"],
                 "reasons": score_result["reasons"],
                 "timestamp": score_result["timestamp"],
+                "ml_metadata": {
+                    "ml_enabled": ml_result.get("ml_enabled", False),
+                    "ml_prediction": ml_result.get("ml_prediction"),
+                    "ml_probability": ml_result.get("ml_probability"),
+                    "ml_boost": ml_result.get("ml_boost", 0.0),
+                    "base_score": ml_result.get("base_score", score_result["score"]),
+                    "base_label": ml_result.get("base_label", score_result["label"]),
+                }
             }
             
             signals.append(signal)
@@ -686,3 +705,17 @@ def predict_tomorrow_chart(request: Request, symbol: str) -> Dict[str, Any]:
         logger.error(f"Error generating prediction chart for {symbol}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/ml-status")
+def get_ml_system_status():
+    """
+    Get ML system status.
+
+    Returns information about ML models, feature engineering, and caching.
+    """
+    try:
+        status = get_ml_status()
+        return status
+    except Exception as e:
+        logger.error(f"Error getting ML status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
