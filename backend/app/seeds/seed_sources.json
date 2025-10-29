@@ -1,53 +1,103 @@
 {
   "sources": [
     {
-      "name": "SEC EDGAR - Apple",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000320193&type=8-K&dateb=&owner=exclude&count=100&search_text=",
+      "name": "SEC EDGAR – Company Filings",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&count=40&output=atom",
       "type": "rss"
     },
     {
-      "name": "SEC EDGAR - Microsoft",
-      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0000789019&type=8-K&dateb=&owner=exclude&count=100&search_text=",
-      "type": "rss"
-    },
-    {
-      "name": "PR Newswire - Technology",
-      "url": "https://www.prnewswire.com/rss/technology-news.rss",
-      "type": "rss"
-    },
-    {
-      "name": "GlobeNewswire - Technology",
-      "url": "https://www.globenewswire.com/feed/tag/technology/rss",
-      "type": "rss"
-    },
-    {
-      "name": "BusinessWire - Deals",
-      "url": "https://www.businesswire.com/portal/site/home/rss/?rss=deals",
-      "type": "rss"
-    },
-    {
-      "name": "NASDAQ Earnings Calendar",
-      "url": "https://www.nasdaq.com/feed/rss/nasdaq-earnings-calendar",
-      "type": "rss"
-    },
-    {
-      "name": "FDA CDER News",
-      "url": "https://www.fda.gov/about-fda/fda-basics/rss-feeds",
-      "type": "rss"
-    },
-    {
-      "name": "Yahoo Finance - Top Stories",
-      "url": "https://feeds.finance.yahoo.com/rss/2.0/headline",
-      "type": "rss"
-    },
-    {
-      "name": "Reuters - Business",
+      "name": "Reuters – Business News",
       "url": "https://feeds.reuters.com/reuters/businessNews",
       "type": "rss"
     },
     {
-      "name": "Bloomberg - Markets",
+      "name": "CNBC – Market News",
+      "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+      "type": "rss"
+    },
+    {
+      "name": "Yahoo Finance – Top Stories",
+      "url": "https://finance.yahoo.com/news/rssindex",
+      "type": "rss"
+    },
+    {
+      "name": "MarketWatch – Top Stories",
+      "url": "https://feeds.marketwatch.com/marketwatch/topstories/",
+      "type": "rss"
+    },
+    {
+      "name": "FierceBiotech – Biotech News",
+      "url": "https://www.fiercebiotech.com/rss/xml",
+      "type": "rss"
+    },
+    {
+      "name": "TechCrunch – Startups",
+      "url": "https://techcrunch.com/startups/feed/",
+      "type": "rss"
+    },
+    {
+      "name": "CleanTechnica – Renewable Energy",
+      "url": "https://cleantechnica.com/feed/",
+      "type": "rss"
+    },
+    {
+      "name": "WaterWorld – Water Industry News",
+      "url": "https://www.waterworld.com/rss",
+      "type": "rss"
+    },
+    {
+      "name": "Federal Reserve – Press Releases",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "type": "rss"
+    },
+    {
+      "name": "Seeking Alpha – Market News",
+      "url": "https://seekingalpha.com/feed.xml",
+      "type": "rss"
+    },
+    {
+      "name": "Investing.com – All News",
+      "url": "https://www.investing.com/rss/news.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Investing.com – Stock Market News",
+      "url": "https://www.investing.com/rss/news_25.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Investing.com – Forex News",
+      "url": "https://www.investing.com/rss/news_1.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Investing.com – Commodities News",
+      "url": "https://www.investing.com/rss/news_11.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Investing.com – Economic Indicators",
+      "url": "https://www.investing.com/rss/news_95.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Investing.com – Economy News",
+      "url": "https://www.investing.com/rss/news_14.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Bloomberg – Markets News",
       "url": "https://feeds.bloomberg.com/markets/news.rss",
+      "type": "rss"
+    },
+    {
+      "name": "Financial Times – Home",
+      "url": "https://www.ft.com/rss/home",
+      "type": "rss"
+    },
+    {
+      "name": "Barron's – Market News",
+      "url": "https://www.barrons.com/feed",
       "type": "rss"
     }
   ]

@@ -7,9 +7,10 @@ from app.core.db import engine
 from app.core.logging import logger
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.models import Base
-from app.api import articles, sources, settings, websocket
+from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin
+from app.api import settings as settings_router
 
-settings = get_settings()
+config = get_settings()
 
 
 @asynccontextmanager
@@ -38,7 +39,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=config.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,8 +48,13 @@ app.add_middleware(
 # Include routers
 app.include_router(articles.router)
 app.include_router(sources.router)
-app.include_router(settings.router)
+app.include_router(settings_router.router)
 app.include_router(websocket.router)
+app.include_router(analysis.router)
+app.include_router(backtest.router)
+app.include_router(stream.router)
+app.include_router(signals.router)
+app.include_router(admin.router)
 
 
 @app.get("/health")
@@ -72,7 +78,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=settings.port,
-        reload=settings.debug,
+        port=config.port,
+        reload=config.debug,
     )
 

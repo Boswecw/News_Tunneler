@@ -45,26 +45,52 @@ export default function SourceForm(props: SourceFormProps) {
 
   return (
     <form onSubmit={handleSubmit} class="card mb-6">
-      <h3 class="text-lg font-semibold mb-4">Add New Source</h3>
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">Add New Source</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Configure a new RSS feed or data source</p>
+        </div>
+      </div>
 
       {error() && (
-        <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded mb-4">
-          {error()}
+        <div class="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-l-4 border-red-500 rounded-r-xl p-4 mb-4 shadow-glass backdrop-blur-sm animate-slide-down">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-red-800 dark:text-red-200">{error()}</p>
+          </div>
         </div>
       )}
 
       {success() && (
-        <div class="bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-200 px-4 py-3 rounded mb-4">
-          Source added successfully!
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-l-4 border-green-500 rounded-r-xl p-4 mb-4 shadow-glass backdrop-blur-sm animate-slide-down">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-green-800 dark:text-green-200">Source added successfully!</p>
+          </div>
         </div>
       )}
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
-          <label class="label">Feed URL</label>
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            🔗 Feed URL
+          </label>
           <input
             type="url"
-            class="input"
+            class="input-glass"
             placeholder="https://example.com/feed.xml"
             value={url()}
             onInput={(e) => setUrl(e.currentTarget.value)}
@@ -73,10 +99,12 @@ export default function SourceForm(props: SourceFormProps) {
         </div>
 
         <div>
-          <label class="label">Feed Name</label>
+          <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            📰 Feed Name
+          </label>
           <input
             type="text"
-            class="input"
+            class="input-glass"
             placeholder="My News Feed"
             value={name()}
             onInput={(e) => setName(e.currentTarget.value)}
@@ -85,10 +113,12 @@ export default function SourceForm(props: SourceFormProps) {
         </div>
       </div>
 
-      <div class="mb-4">
-        <label class="label">Feed Type</label>
+      <div class="mb-6">
+        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          ⚙️ Feed Type
+        </label>
         <select
-          class="input"
+          class="input-glass"
           value={sourceType()}
           onChange={(e) => setSourceType(e.currentTarget.value)}
         >
@@ -98,8 +128,15 @@ export default function SourceForm(props: SourceFormProps) {
         </select>
       </div>
 
-      <button type="submit" class="btn btn-primary" disabled={isLoading()}>
-        {isLoading() ? 'Adding...' : 'Add Source'}
+      <button type="submit" class="btn-primary" disabled={isLoading()}>
+        {isLoading() ? (
+          <span class="flex items-center gap-2">
+            <div class="spinner h-4 w-4"></div>
+            Adding...
+          </span>
+        ) : (
+          '+ Add Source'
+        )}
       </button>
     </form>
   )

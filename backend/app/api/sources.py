@@ -82,7 +82,7 @@ async def create_source(
 def update_source(
     source_id: int,
     enabled: bool | None = None,
-    db: Session = Depends(get_db) = None,
+    db: Session = Depends(get_db),
 ) -> SourceResponse:
     """Update source (enable/disable)."""
     source = db.query(Source).filter(Source.id == source_id).first()

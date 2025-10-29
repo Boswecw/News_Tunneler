@@ -34,11 +34,30 @@ class Settings(BaseSettings):
     alert_email_to: str = ""
 
     # CORS
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"]
+
+    # LLM Analysis
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+    llm_min_alert_score: int = 12
+
+    # Price Data
+    use_price_source: str = "yahoo"  # Options: yahoo, polygon
+    polygon_api_key: str = ""
 
     class Config:
         env_file = ".env"
         case_sensitive = False
+        env_prefix = ""
+
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str):
+            if field_name == 'cors_origins':
+                if not raw_val or raw_val.strip() == '':
+                    return ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"]
+                import json
+                return json.loads(raw_val)
+            return raw_val
 
     @property
     def slack_enabled(self) -> bool:
@@ -55,6 +74,10 @@ class Settings(BaseSettings):
     @property
     def alphavantage_enabled(self) -> bool:
         return bool(self.alphavantage_key)
+
+    @property
+    def llm_enabled(self) -> bool:
+        return bool(self.openai_api_key and self.openai_api_key != "your_key_here")
 
 
 @lru_cache()

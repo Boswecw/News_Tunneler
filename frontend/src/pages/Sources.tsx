@@ -46,23 +46,43 @@ export default function Sources() {
   }
 
   return (
-    <div>
-      <h1 class="text-3xl font-bold mb-8">News Sources</h1>
+    <div class="animate-fade-in">
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold text-gradient mb-2">News Sources</h1>
+        <p class="text-gray-600 dark:text-gray-400">Manage RSS feeds and data sources</p>
+      </div>
 
       <SourceForm onSuccess={loadSources} />
 
       <div class="card">
-        <h2 class="text-lg font-semibold mb-4">Active Sources</h2>
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-900 dark:text-white">Active Sources</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{sources().length} configured</p>
+          </div>
+        </div>
 
         {isLoading() && (
-          <div class="text-center py-8 text-gray-600 dark:text-gray-400">
-            Loading sources...
+          <div class="flex flex-col items-center justify-center py-12">
+            <div class="spinner h-12 w-12 mb-4"></div>
+            <p class="text-gray-600 dark:text-gray-400 font-medium">Loading sources...</p>
           </div>
         )}
 
         {!isLoading() && sources().length === 0 && (
-          <div class="text-center py-8 text-gray-600 dark:text-gray-400">
-            No sources configured yet. Add one above!
+          <div class="text-center py-12">
+            <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+              <svg class="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <p class="text-gray-600 dark:text-gray-400 font-medium mb-1">No sources configured yet</p>
+            <p class="text-sm text-gray-500 dark:text-gray-500">Add one using the form above!</p>
           </div>
         )}
 
@@ -70,16 +90,19 @@ export default function Sources() {
           <div class="space-y-3">
             <For each={sources()}>
               {(source) => (
-                <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div class="group flex items-center justify-between p-5 bg-white/40 dark:bg-white/5 backdrop-blur-md rounded-2xl border border-white/30 dark:border-white/10 hover:bg-white/60 dark:hover:bg-white/10 hover:shadow-glass transition-all duration-200">
                   <div class="flex-1">
-                    <h3 class="font-semibold text-gray-900 dark:text-white">
-                      {source.name}
-                    </h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    <div class="flex items-center gap-2 mb-1">
+                      <div class={source.enabled ? 'status-online' : 'status-offline'}></div>
+                      <h3 class="font-bold text-gray-900 dark:text-white">
+                        {source.name}
+                      </h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 truncate mb-2">
                       {source.url}
                     </p>
-                    <div class="flex items-center space-x-2 mt-2">
-                      <span class="inline-block bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">
+                    <div class="flex items-center space-x-2">
+                      <span class="badge-primary text-xs">
                         {source.source_type.toUpperCase()}
                       </span>
                       {source.last_fetched_at && (
@@ -93,19 +116,19 @@ export default function Sources() {
                   <div class="flex items-center space-x-2 ml-4">
                     <button
                       onClick={() => handleToggle(source.id, source.enabled)}
-                      class={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      class={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         source.enabled
-                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800'
+                          ? 'btn-success'
                           : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600'
                       }`}
                     >
-                      {source.enabled ? 'Enabled' : 'Disabled'}
+                      {source.enabled ? '✓ Enabled' : '○ Disabled'}
                     </button>
                     <button
                       onClick={() => handleDelete(source.id)}
-                      class="btn btn-danger text-sm"
+                      class="btn-danger text-sm"
                     >
-                      Delete
+                      🗑 Delete
                     </button>
                   </div>
                 </div>

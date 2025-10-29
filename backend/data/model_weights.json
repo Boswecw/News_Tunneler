@@ -1,0 +1,13 @@
+{
+  "sentiment": 24.0,
+  "magnitude": 16.0,
+  "novelty": 10.0,
+  "credibility": 8.0,
+  "ret_1d": 8.0,
+  "vol_z": 10.0,
+  "vwap_dev": 6.0,
+  "gap_pct": 4.0,
+  "sector_momo_pct": 6.0,
+  "earnings_in_days": 4.0
+}
+

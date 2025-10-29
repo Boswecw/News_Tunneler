@@ -11,11 +11,12 @@
     "format": "prettier --write src"
   },
   "dependencies": {
-    "solid-js": "^1.8.0",
     "@solidjs/router": "^0.13.0",
-    "zustand": "^4.4.0",
+    "apexcharts": "^5.3.5",
+    "axios": "^1.6.0",
     "date-fns": "^2.30.0",
-    "axios": "^1.6.0"
+    "solid-apexcharts": "^0.6.0",
+    "solid-js": "^1.8.0"
   },
   "devDependencies": {
     "vite": "^5.0.0",
@@ -28,4 +29,3 @@
     "prettier": "^3.1.0"
   }
 }
-

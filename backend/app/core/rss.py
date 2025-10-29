@@ -23,18 +23,29 @@ class NormalizedArticle(TypedDict):
 async def fetch_feed(url: str) -> feedparser.FeedParserDict | None:
     """
     Fetch and parse RSS/Atom feed with retries.
-    
+
     Returns parsed feed or None on failure.
     """
+    # Browser-like headers to avoid bot detection
+    headers = {
+        "User-Agent": "NewsTunneler/1.0 (Boswell Digital Solutions LLC; charliewboswell@gmail.com) Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/rss+xml, application/xml, application/atom+xml, text/xml, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    }
+
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, follow_redirects=True)
+            response = await client.get(url, headers=headers, follow_redirects=True)
             response.raise_for_status()
-            
+
             feed = feedparser.parse(response.content)
             if feed.bozo:
                 logger.warning(f"Feed parsing warning for {url}: {feed.bozo_exception}")
-            
+
             return feed
     except Exception as e:
         logger.error(f"Failed to fetch feed {url}: {e}")

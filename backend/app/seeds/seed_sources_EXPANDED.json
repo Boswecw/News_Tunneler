@@ -1,0 +1,125 @@
+{
+  "sources": [
+    {
+      "name": "SEC EDGAR – Company Filings",
+      "url": "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=&count=40&output=atom",
+      "type": "rss",
+      "category": "regulatory"
+    },
+    {
+      "name": "Reuters – Business News",
+      "url": "https://feeds.reuters.com/reuters/businessNews",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "CNBC – Market News",
+      "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "Yahoo Finance – Top Stories",
+      "url": "https://finance.yahoo.com/news/rssindex",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "MarketWatch – Top Stories",
+      "url": "https://feeds.marketwatch.com/marketwatch/topstories/",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "FierceBiotech – Biotech News",
+      "url": "https://www.fiercebiotech.com/rss/xml",
+      "type": "rss",
+      "category": "sector_biotech"
+    },
+    {
+      "name": "TechCrunch – Startups",
+      "url": "https://techcrunch.com/startups/feed/",
+      "type": "rss",
+      "category": "sector_tech"
+    },
+    {
+      "name": "CleanTechnica – Renewable Energy",
+      "url": "https://cleantechnica.com/feed/",
+      "type": "rss",
+      "category": "sector_energy"
+    },
+    {
+      "name": "WaterWorld – Water Industry News",
+      "url": "https://www.waterworld.com/rss",
+      "type": "rss",
+      "category": "sector_utilities"
+    },
+    {
+      "name": "Federal Reserve – Press Releases",
+      "url": "https://www.federalreserve.gov/feeds/press_all.xml",
+      "type": "rss",
+      "category": "macro_central_banks"
+    },
+    {
+      "name": "Seeking Alpha – Market News",
+      "url": "https://seekingalpha.com/feed.xml",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "Investing.com – All News",
+      "url": "https://www.investing.com/rss/news.rss",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "Investing.com – Stock Market News",
+      "url": "https://www.investing.com/rss/news_25.rss",
+      "type": "rss",
+      "category": "stocks"
+    },
+    {
+      "name": "Investing.com – Forex News",
+      "url": "https://www.investing.com/rss/news_1.rss",
+      "type": "rss",
+      "category": "forex"
+    },
+    {
+      "name": "Investing.com – Commodities News",
+      "url": "https://www.investing.com/rss/news_11.rss",
+      "type": "rss",
+      "category": "commodities"
+    },
+    {
+      "name": "Investing.com – Economic Indicators",
+      "url": "https://www.investing.com/rss/news_95.rss",
+      "type": "rss",
+      "category": "macro_economy"
+    },
+    {
+      "name": "Investing.com – Economy News",
+      "url": "https://www.investing.com/rss/news_14.rss",
+      "type": "rss",
+      "category": "macro_economy"
+    },
+    {
+      "name": "Bloomberg – Markets News",
+      "url": "https://feeds.bloomberg.com/markets/news.rss",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "Financial Times – Home",
+      "url": "https://www.ft.com/rss/home",
+      "type": "rss",
+      "category": "general_market"
+    },
+    {
+      "name": "Barron's – Market News",
+      "url": "https://www.barrons.com/feed",
+      "type": "rss",
+      "category": "general_market"
+    }
+  ]
+}
+

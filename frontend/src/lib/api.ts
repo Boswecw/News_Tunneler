@@ -29,6 +29,50 @@ export const getArticle = async (id: number): Promise<Article> => {
   return response.data
 }
 
+// LLM Analysis
+export interface LLMPlan {
+  ticker: string
+  sector: string
+  catalyst_type: string
+  stance: string
+  thesis: string
+  key_facts: string[]
+  near_term_window_days: number
+  confidence_0to1: number
+  risks: string[]
+  suggested_setups: Array<{
+    style: string
+    entry_hint: string
+    invalidations: string
+    hold_time_days: number
+  }>
+  simple_explanation?: string
+  summary?: string
+}
+
+export interface ArticlePlan {
+  article_id: number
+  strategy_bucket: string | null
+  strategy_risk: {
+    max_position_pct: number
+    stop_guideline: string
+    review_in_days: number
+    confidence: number
+  } | null
+  llm_plan: LLMPlan | null
+  published_at: string | null
+}
+
+export const analyzeArticle = async (id: number): Promise<{ status: string; article_id: number }> => {
+  const response = await api.post(`/api/articles/llm/analyze/${id}`)
+  return response.data
+}
+
+export const fetchPlan = async (id: number): Promise<ArticlePlan> => {
+  const response = await api.get(`/api/articles/${id}/plan`)
+  return response.data
+}
+
 // Sources
 export interface Source {
   id: number

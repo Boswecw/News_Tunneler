@@ -1,11 +1,16 @@
-import { useStore } from './store'
-
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws/alerts'
 
 let ws: WebSocket | null = null
 let reconnectAttempts = 0
 const MAX_RECONNECT_ATTEMPTS = 5
 const RECONNECT_DELAY = 3000
+
+// Store reference to be set from outside
+let storeRef: any = null
+
+export const setStoreRef = (store: any) => {
+  storeRef = store
+}
 
 export const connectWebSocket = (onAlert?: (data: any) => void) => {
   if (ws && ws.readyState === WebSocket.OPEN) {
@@ -17,7 +22,9 @@ export const connectWebSocket = (onAlert?: (data: any) => void) => {
 
     ws.onopen = () => {
       console.log('WebSocket connected')
-      useStore.setState({ isConnected: true })
+      if (storeRef) {
+        storeRef.setIsConnected(true)
+      }
       reconnectAttempts = 0
     }
 
@@ -25,7 +32,9 @@ export const connectWebSocket = (onAlert?: (data: any) => void) => {
       try {
         const message = JSON.parse(event.data)
         if (message.type === 'alert') {
-          useStore.getState().addLiveAlert(message.data)
+          if (storeRef) {
+            storeRef.addLiveAlert(message.data)
+          }
           onAlert?.(message.data)
         }
       } catch (error) {
@@ -35,12 +44,16 @@ export const connectWebSocket = (onAlert?: (data: any) => void) => {
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error)
-      useStore.setState({ isConnected: false })
+      if (storeRef) {
+        storeRef.setIsConnected(false)
+      }
     }
 
     ws.onclose = () => {
       console.log('WebSocket disconnected')
-      useStore.setState({ isConnected: false })
+      if (storeRef) {
+        storeRef.setIsConnected(false)
+      }
       attemptReconnect(onAlert)
     }
   } catch (error) {
