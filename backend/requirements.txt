@@ -20,3 +20,14 @@ pandas>=2.2.0
 numpy>=1.26.0
 yfinance>=0.2.66
 
+# Phase 1 Improvements - Caching & Performance
+redis>=5.0.0
+slowapi>=0.1.9
+circuitbreaker>=1.4.0
+
+# Phase 2 Improvements - Infrastructure
+python-json-logger>=2.0.7  # Structured logging
+psycopg2-binary>=2.9.9     # PostgreSQL driver
+celery[redis]>=5.3.0       # Distributed task queue
+flower>=2.0.1              # Celery monitoring
+

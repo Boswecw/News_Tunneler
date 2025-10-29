@@ -3,7 +3,7 @@ Signals API Endpoints
 
 Provides ticker-level trading signals with scores and explainability.
 """
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, HTTPException, Body, Request
 from typing import List, Dict, Optional, Any
 from datetime import datetime, timedelta
 from sqlalchemy import desc
@@ -14,6 +14,8 @@ from app.services.scoring import strong_score, extract_news_features
 from app.core.prices import get_daily_prices
 from app.core.logging import logger
 from app.core.market_hours import is_market_hours
+from app.middleware.rate_limit import limiter
+from app.core.cache import cache_result
 from zoneinfo import ZoneInfo
 import pandas as pd
 import yfinance as yf
@@ -27,11 +29,14 @@ router = APIRouter(prefix="/api/signals", tags=["signals"])
 SIGNAL_CACHE: Dict[str, Dict] = {}
 
 
+@cache_result(ttl=300, key_prefix="market_features")  # Cache for 5 minutes
 def calculate_market_features(symbol: str) -> Dict:
     """
     Calculate market/tape features for a symbol.
-    
+
     Returns dict with ret_1d, vol_z, gap_pct, atr_pct, vwap_dev, beta
+
+    Cached for 5 minutes to reduce computation.
     """
     try:
         # Get price data
@@ -198,7 +203,8 @@ def ingest_article(payload: Dict = Body(...)):
 
 
 @router.get("/top")
-def get_top_signals(limit: int = 20, min_score: float = 0.0):
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute
+def get_top_signals(request: Request, limit: int = 20, min_score: float = 0.0):
     """
     Get top signals sorted by score.
     
@@ -309,7 +315,8 @@ def recalculate_signal(symbol: str):
 
 
 @router.post("/ingest")
-def ingest_signals(payload: Dict = Body(...)) -> Dict:
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute
+def ingest_signals(request: Request, payload: Dict = Body(...)) -> Dict:
     """
     Ingest signals and compute scores.
 
@@ -391,7 +398,8 @@ def ingest_signals(payload: Dict = Body(...)) -> Dict:
 
 
 @router.get("/{symbol}/latest")
-def get_latest_signal(symbol: str) -> Dict:
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute
+def get_latest_signal(request: Request, symbol: str) -> Dict:
     """
     Get latest signal for a specific ticker from database.
 
@@ -437,7 +445,9 @@ def get_latest_signal(symbol: str) -> Dict:
 
 
 @router.get("/top-predictions")
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute
 def get_top_predictions(
+    request: Request,
     limit: int = 10,
     min_score: float = 50.0,
     days: int = 30
@@ -517,7 +527,8 @@ def get_top_predictions(
 
 
 @router.get("/predict-tomorrow/{symbol}")
-def predict_tomorrow_chart(symbol: str) -> Dict[str, Any]:
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute
+def predict_tomorrow_chart(request: Request, symbol: str) -> Dict[str, Any]:
     """
     Generate predicted price chart for tomorrow's trading session.
 

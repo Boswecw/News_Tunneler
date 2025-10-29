@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from app.core.logging import logger
 from app.core.prices import get_daily_prices
 from app.core.market_hours import is_market_hours
+from app.middleware.rate_limit import limiter
 
 # Import yfinance for intraday data
 try:
@@ -182,6 +183,7 @@ async def _stream_sentiment_data(symbol: str, interval_sec: float = 2.0) -> Asyn
 
 
 @router.get("/sse/price/{symbol}")
+@limiter.limit("5/minute")  # Rate limit: 5 requests per minute (streaming is expensive)
 async def sse_price(symbol: str, request: Request):
     """
     Server-Sent Events endpoint for real-time price streaming.
@@ -211,6 +213,7 @@ async def sse_price(symbol: str, request: Request):
 
 
 @router.get("/sse/sentiment/{symbol}")
+@limiter.limit("5/minute")  # Rate limit: 5 requests per minute (streaming is expensive)
 async def sse_sentiment(symbol: str, request: Request):
     """
     Server-Sent Events endpoint for real-time sentiment streaming.

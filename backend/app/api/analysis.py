@@ -1,17 +1,19 @@
 """API routes for price analysis and technical indicators."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from datetime import datetime
 from typing import Optional
 import pandas as pd
 from app.core.prices import get_daily_prices, compute_indicators, compute_gap_percent
 from app.core.event_study import get_typical_reaction
 from app.core.logging import logger
+from app.middleware.rate_limit import limiter
 
 router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 
 
 @router.get("/summary/{ticker}")
-def get_summary(ticker: str):
+@limiter.limit("20/minute")  # Rate limit: 20 requests per minute
+def get_summary(request: Request, ticker: str):
     """
     Get current price summary with technical indicators.
     
@@ -90,7 +92,9 @@ def get_summary(ticker: str):
 
 
 @router.get("/event/{ticker}")
+@limiter.limit("20/minute")  # Rate limit: 20 requests per minute
 def get_event_reaction(
+    request: Request,
     ticker: str,
     event_date: str = Query(..., description="Event date in YYYY-MM-DD format")
 ):

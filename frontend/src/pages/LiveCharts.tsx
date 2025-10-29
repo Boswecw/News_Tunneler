@@ -372,8 +372,9 @@ export default function LiveCharts() {
             </div>
           </div>
         </div>
-        </div>
       </div>
+      </div>
+    </div>
     );
   }
 

@@ -15,6 +15,16 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./data/news.db"
 
+    # PostgreSQL (Phase 2 Improvement)
+    use_postgresql: bool = False
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_db: str = "news_tunneler"
+    postgres_user: str = "news_tunneler"
+    postgres_password: str = "news_tunneler_dev_password"
+    postgres_pool_size: int = 10
+    postgres_max_overflow: int = 20
+
     # Polling
     poll_interval_sec: int = 900  # 15 minutes
 
@@ -44,6 +54,12 @@ class Settings(BaseSettings):
     # Price Data
     use_price_source: str = "yahoo"  # Options: yahoo, polygon
     polygon_api_key: str = ""
+
+    # Redis Cache (Phase 1 Improvement)
+    redis_enabled: bool = True
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
 
     class Config:
         env_file = ".env"
@@ -78,6 +94,18 @@ class Settings(BaseSettings):
     @property
     def llm_enabled(self) -> bool:
         return bool(self.openai_api_key and self.openai_api_key != "your_key_here")
+
+    @property
+    def postgres_url(self) -> str:
+        """Get PostgreSQL connection URL."""
+        return f"postgresql://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+
+    @property
+    def effective_database_url(self) -> str:
+        """Get the effective database URL based on use_postgresql flag."""
+        if self.use_postgresql:
+            return self.postgres_url
+        return self.database_url
 
 
 @lru_cache()

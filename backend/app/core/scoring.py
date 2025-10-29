@@ -2,6 +2,9 @@
 import re
 from datetime import datetime, timedelta
 from .sentiment import analyze_sentiment
+from .cache import cache_result
+from .resilience import with_fallback
+from .logging import logger
 
 
 def score_catalyst(title: str, summary: str) -> float:
@@ -68,15 +71,55 @@ def score_credibility(source_url: str) -> float:
     return 3.0
 
 
+@cache_result(ttl=3600, key_prefix="liquidity")  # Cache for 1 hour
+@with_fallback(fallback_value=0.0, log_error=True)
 def score_liquidity(ticker: str | None) -> float:
     """
-    Score liquidity (0-5).
-    
-    Currently returns 0 (placeholder for API integration).
-    Can be enhanced with AlphaVantage or NewsAPI volume data.
+    Score liquidity based on average volume (0-5).
+
+    5: >10M avg volume (highly liquid)
+    4: 5M-10M
+    3: 1M-5M
+    2: 100K-1M
+    1: 10K-100K
+    0: <10K or no data
+
+    Uses yfinance to get average volume data.
+    Results are cached for 1 hour to reduce API calls.
     """
-    # TODO: Integrate with AlphaVantage or NewsAPI for volume data
-    return 0.0
+    if not ticker:
+        return 0.0
+
+    try:
+        import yfinance as yf
+
+        # Get stock info
+        stock = yf.Ticker(ticker)
+        info = stock.info
+
+        # Get average volume
+        avg_volume = info.get('averageVolume', 0)
+
+        # Score based on volume tiers
+        if avg_volume >= 10_000_000:
+            score = 5.0
+        elif avg_volume >= 5_000_000:
+            score = 4.0
+        elif avg_volume >= 1_000_000:
+            score = 3.0
+        elif avg_volume >= 100_000:
+            score = 2.0
+        elif avg_volume >= 10_000:
+            score = 1.0
+        else:
+            score = 0.0
+
+        logger.debug(f"Liquidity score for {ticker}: {score} (avg_volume={avg_volume:,})")
+        return score
+
+    except Exception as e:
+        logger.warning(f"Failed to get liquidity for {ticker}: {e}")
+        return 0.0
 
 
 def compute_total_score(

@@ -1,7 +1,7 @@
 """Articles API endpoints."""
 from datetime import datetime
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
 from app.core.db import get_db
@@ -9,6 +9,7 @@ from app.models import Article, Score
 from app.core.llm import analyze_article
 from app.core.strategies import map_to_strategy
 from app.core.config import get_settings
+from app.middleware.rate_limit import limiter
 from pydantic import BaseModel
 import logging
 
@@ -36,7 +37,9 @@ class ArticleResponse(BaseModel):
 
 
 @router.get("", response_model=list[ArticleResponse])
+@limiter.limit("30/minute")  # Rate limit: 30 requests per minute
 def list_articles(
+    request: Request,
     db: Session = Depends(get_db),
     q: Optional[str] = Query(None, description="Search in title/summary"),
     min_score: float = Query(0, description="Minimum score"),
@@ -103,7 +106,8 @@ def list_articles(
 
 
 @router.get("/{article_id}", response_model=ArticleResponse)
-def get_article(article_id: int, db: Session = Depends(get_db)) -> ArticleResponse:
+@limiter.limit("30/minute")  # Rate limit: 30 requests per minute
+def get_article(request: Request, article_id: int, db: Session = Depends(get_db)) -> ArticleResponse:
     """Get a single article by ID."""
     article = db.query(Article).filter(Article.id == article_id).first()
     if not article:
@@ -113,7 +117,9 @@ def get_article(article_id: int, db: Session = Depends(get_db)) -> ArticleRespon
 
 
 @router.post("/llm/analyze/{article_id}")
+@limiter.limit("30/minute")  # Rate limit: 30 requests per minute
 def analyze_article_llm(
+    request: Request,
     article_id: int,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
@@ -202,7 +208,8 @@ def analyze_article_llm(
 
 
 @router.get("/{article_id}/plan")
-def get_article_plan(article_id: int, db: Session = Depends(get_db)) -> Dict[str, Any]:
+@limiter.limit("30/minute")  # Rate limit: 30 requests per minute
+def get_article_plan(request: Request, article_id: int, db: Session = Depends(get_db)) -> Dict[str, Any]:
     """
     Get the LLM analysis plan for an article.
 

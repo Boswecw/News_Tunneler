@@ -9,6 +9,7 @@ import Sources from './pages/Sources'
 import Settings from './pages/Settings'
 import LiveCharts from './pages/LiveCharts'
 import Opportunities from './pages/Opportunities'
+import FAQ from './pages/FAQ'
 import Navigation from './components/Navigation'
 
 const routes = [
@@ -35,6 +36,10 @@ const routes = [
   {
     path: '/live-charts',
     component: LiveCharts,
+  },
+  {
+    path: '/faq',
+    component: FAQ,
   },
 ]
 

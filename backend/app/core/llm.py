@@ -5,6 +5,7 @@ import logging
 from typing import Dict, Any, Optional
 from openai import OpenAI
 from app.core.config import get_settings
+from app.core.resilience import retry_on_exception, with_fallback
 
 logger = logging.getLogger(__name__)
 
@@ -51,26 +52,29 @@ Return ONLY JSON, no prose.
 """
 
 
+@retry_on_exception(max_attempts=3, min_wait=2, max_wait=10)
 def analyze_article(article: Dict[str, Any]) -> Dict[str, Any]:
     """
     Analyze an article using OpenAI and return structured trading plan.
-    
+
+    Includes automatic retry logic with exponential backoff for transient failures.
+
     Args:
         article: Dictionary containing article data (title, summary, url, etc.)
-        
+
     Returns:
         Dictionary containing the LLM analysis result
-        
+
     Raises:
         ValueError: If LLM is not enabled
-        Exception: If OpenAI API call fails
+        Exception: If OpenAI API call fails after retries
     """
     if not settings.llm_enabled or not client:
         raise ValueError("LLM analysis is not enabled. Please set OPENAI_API_KEY in .env")
-    
+
     try:
         logger.info(f"Analyzing article: {article.get('title', 'Unknown')[:50]}...")
-        
+
         response = client.chat.completions.create(
             model=settings.openai_model,
             messages=[
@@ -80,14 +84,14 @@ def analyze_article(article: Dict[str, Any]) -> Dict[str, Any]:
             response_format={"type": "json_object"},  # Ensures JSON object output
             # Note: gpt-5-mini only supports default temperature (1.0)
         )
-        
+
         # Extract the JSON from the response
         result = json.loads(response.choices[0].message.content)
-        
+
         logger.info(f"Successfully analyzed article. Ticker: {result.get('ticker', 'N/A')}, Stance: {result.get('stance', 'N/A')}")
-        
+
         return result
-        
+
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse LLM response as JSON: {e}")
         raise Exception(f"LLM returned invalid JSON: {e}")

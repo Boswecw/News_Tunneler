@@ -61,6 +61,13 @@ export default function Navigation() {
             >
               Settings
             </A>
+            <A
+              href="/faq"
+              class="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-white/40 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 transition-all duration-200 backdrop-blur-sm"
+              activeClass="bg-white/60 dark:bg-white/10 text-blue-600 dark:text-blue-400 shadow-glass"
+            >
+              FAQ
+            </A>
           </div>
         </div>
 
