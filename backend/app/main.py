@@ -8,7 +8,7 @@ from app.core.logging import logger
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.core.structured_logging import setup_structured_logging, get_logger
 from app.models import Base
-from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin
+from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, ml
 from app.api import settings as settings_router
 from app.middleware.rate_limit import limiter, custom_rate_limit_handler
 from app.middleware.request_id import RequestIDMiddleware
@@ -77,6 +77,7 @@ app.include_router(backtest.router)
 app.include_router(stream.router)
 app.include_router(signals.router)
 app.include_router(admin.router)
+app.include_router(ml.router)
 
 
 @app.get("/health")
