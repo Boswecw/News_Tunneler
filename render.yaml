@@ -40,15 +40,9 @@ services:
           name: news-tunneler-db
           property: password
       - key: REDIS_HOST
-        fromService:
-          type: redis
-          name: news-tunneler-redis
-          property: host
+        sync: false
       - key: REDIS_PORT
-        fromService:
-          type: redis
-          name: news-tunneler-redis
-          property: port
+        value: 6379
       - key: JWT_SECRET_KEY
         generateValue: true
         sync: false
@@ -138,11 +132,5 @@ databases:
     user: news_tunneler
     region: oregon
     plan: starter
-    ipAllowList: []
-
-  - name: news-tunneler-redis
-    region: oregon
-    plan: starter
-    maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 

@@ -4,7 +4,7 @@ This guide covers deploying News Tunneler to Render.com with PostgreSQL and Redi
 
 ## 🚀 Quick Deploy
 
-### Option 1: One-Click Deploy (Recommended)
+### Option 1: Blueprint Deploy (Semi-Automated)
 
 Click the button below to deploy News Tunneler to Render:
 
@@ -12,15 +12,16 @@ Click the button below to deploy News Tunneler to Render:
 
 This will automatically:
 - Create PostgreSQL database
-- Create Redis instance
 - Deploy backend API
 - Deploy frontend static site
 - Set up environment variables
 - Run database migrations
 
+**Note:** You'll need to manually create a Redis instance and add the connection details (see Step 2 below).
+
 ### Option 2: Manual Deployment
 
-Follow the steps below for manual deployment with more control.
+Follow the steps below for complete manual deployment with full control.
 
 ---
 
