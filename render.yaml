@@ -4,7 +4,7 @@ services:
     name: news-tunneler-backend
     runtime: python
     region: oregon
-    plan: starter
+    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
@@ -88,7 +88,7 @@ services:
   - type: web
     name: news-tunneler-frontend
     runtime: static
-    plan: starter
+    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
@@ -129,6 +129,6 @@ databases:
     databaseName: news_tunneler
     user: news_tunneler
     region: oregon
-    plan: starter
+    plan: free
     ipAllowList: []
 
