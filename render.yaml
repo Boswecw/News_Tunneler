@@ -48,17 +48,17 @@ services:
       - key: JWT_ALGORITHM
         value: HS256
       - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-        value: 30
+        value: "30"
       - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
-        value: 7
+        value: "7"
       - key: REQUIRE_AUTH
-        value: false
+        value: "false"
       - key: ALLOW_REGISTRATION
-        value: true
+        value: "true"
       - key: PROMETHEUS_ENABLED
-        value: true
+        value: "true"
       - key: PROMETHEUS_PORT
-        value: 9090
+        value: "9090"
       - key: OPENAI_API_KEY
         sync: false
       - key: NEWSAPI_KEY
@@ -72,7 +72,7 @@ services:
       - key: SMTP_HOST
         sync: false
       - key: SMTP_PORT
-        value: 587
+        value: "587"
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASSWORD
@@ -130,4 +130,3 @@ databases:
     region: oregon
     plan: free
     ipAllowList: []
-
