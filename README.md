@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![News Tunneler Logo](frontend/public/logo.webp)
+![News Tunneler Logo](frontend/public/News_Tunneler_icon.webp)
 
 **AI-Powered Trading Analytics Platform**
 
@@ -12,6 +12,13 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![SolidJS](https://img.shields.io/badge/SolidJS-1.8+-blue.svg)](https://www.solidjs.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+### 🚀 Lighthouse Performance Scores
+
+![Performance: 92](https://img.shields.io/badge/Performance-92-brightgreen)
+![Accessibility: 100](https://img.shields.io/badge/Accessibility-100-brightgreen)
+![Best Practices: 100](https://img.shields.io/badge/Best%20Practices-100-brightgreen)
+![SEO: 100](https://img.shields.io/badge/SEO-100-brightgreen)
 
 [Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [API Reference](#-api-reference) • [Screenshots](#-screenshots)
 
