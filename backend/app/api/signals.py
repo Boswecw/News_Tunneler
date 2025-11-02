@@ -6,9 +6,9 @@ Provides ticker-level trading signals with scores and explainability.
 from fastapi import APIRouter, HTTPException, Body, Request
 from typing import List, Dict, Optional, Any
 from datetime import datetime, timedelta
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from app.core.db import get_db_context
-from app.models import Article, Score, Signal
+from app.models import Article, Score, Signal, OpportunityCache
 from app.services.ticker_identifier import resolve_tickers, get_symbol_info
 from app.services.scoring import strong_score, extract_news_features
 from app.core.prices import get_daily_prices
@@ -16,11 +16,20 @@ from app.core.logging import logger
 from app.core.market_hours import is_market_hours
 from app.middleware.rate_limit import limiter
 from app.core.cache import cache_result
+from app.core.memory_cache import (
+    get_model_registry_cached,
+    get_signal_batch_cached,
+    cache_signal_batch,
+    invalidate_opportunities,
+    TTL_OPPORTUNITIES,
+)
+from app.core.performance import PerformanceMonitor
 from app.ml.signal_scoring import score_signal_with_ml, get_ml_status
 from zoneinfo import ZoneInfo
 import pandas as pd
 import yfinance as yf
 import math
+import pathlib
 
 
 router = APIRouter(prefix="/api/signals", tags=["signals"])
@@ -208,12 +217,47 @@ def ingest_article(payload: Dict = Body(...)):
             }
             
             signals.append(signal)
-            
+
             # Cache the signal (keep latest per symbol)
             SIGNAL_CACHE[symbol] = signal
-        
+
+        # Save signals to database
+        with get_db_context() as db:
+            for sig in signals:
+                # Check if signal already exists (by symbol + timestamp)
+                existing = db.query(Signal).filter(
+                    Signal.symbol == sig["symbol"],
+                    Signal.t == sig["timestamp"]
+                ).first()
+
+                if existing:
+                    # Update existing signal
+                    existing.article_id = sig["article_id"]
+                    existing.features = sig["features"]
+                    existing.score = sig["score"]
+                    existing.label = sig["label"]
+                    existing.reasons = sig["reasons"]
+                    existing.confidence = sig["confidence"]
+                    db.add(existing)
+                else:
+                    # Create new signal
+                    new_signal = Signal(
+                        symbol=sig["symbol"],
+                        article_id=sig["article_id"],
+                        t=sig["timestamp"],
+                        features=sig["features"],
+                        score=sig["score"],
+                        label=sig["label"],
+                        reasons=sig["reasons"],
+                        confidence=sig["confidence"],
+                    )
+                    db.add(new_signal)
+
+            db.commit()
+            logger.info(f"Saved {len(signals)} signals to database for article {article_id}")
+
         logger.info(f"Generated {len(signals)} signals for article {article_id}")
-        
+
         return {"ok": True, "signals": signals, "count": len(signals)}
     
     except Exception as e:
@@ -223,28 +267,50 @@ def ingest_article(payload: Dict = Body(...)):
 
 @router.get("/top")
 @limiter.limit("10/minute")  # Rate limit: 10 requests per minute
-def get_top_signals(request: Request, limit: int = 20, min_score: float = 0.0):
+def get_top_signals(request: Request, limit: int = 20, min_score: float = 50.0, days: int = 7):
     """
-    Get top signals sorted by score.
-    
+    Get top signals sorted by score from the database.
+
     Query params:
         - limit: max number of results (default: 20)
-        - min_score: minimum score threshold (default: 0.0)
-    
+        - min_score: minimum score threshold (default: 50.0)
+        - days: look back period in days (default: 7)
+
     Returns:
         List[Dict] of signals sorted by score descending
     """
     try:
-        # Filter and sort signals
-        filtered = [
-            sig for sig in SIGNAL_CACHE.values()
-            if sig["score"] >= min_score
-        ]
-        
-        sorted_signals = sorted(filtered, key=lambda x: x["score"], reverse=True)[:limit]
-        
-        return sorted_signals
-    
+        # Query database for recent high-scoring signals
+        cutoff_time = datetime.now(ZoneInfo("America/New_York")) - timedelta(days=days)
+
+        with get_db_context() as db:
+            # Get signals from database
+            signals = (
+                db.query(Signal)
+                .filter(Signal.score >= min_score)
+                .filter(Signal.created_at >= cutoff_time)
+                .order_by(Signal.score.desc())
+                .limit(limit)
+                .all()
+            )
+
+            # Convert to dict format
+            result = []
+            for sig in signals:
+                result.append({
+                    "symbol": sig.symbol,
+                    "score": sig.score,
+                    "label": sig.label,
+                    "reasons": sig.reasons,
+                    "features": sig.features,
+                    "timestamp": sig.t,
+                    "confidence": sig.features.get("credibility", 0.0) if sig.features else 0.0,
+                    "match_type": "database",
+                })
+
+            logger.info(f"Returning {len(result)} top signals from database (min_score={min_score}, days={days})")
+            return result
+
     except Exception as e:
         logger.error(f"Error getting top signals: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
@@ -533,8 +599,8 @@ def get_top_predictions(
                     "score": signal.score,
                     "label": signal.label,
                     "t": signal.t,
-                    "article_id": signal.article_id,
-                    "confidence": signal.confidence if hasattr(signal, 'confidence') else None,
+                    "article_id": signal.article_id if signal.article_id else None,
+                    "confidence": signal.confidence if signal.confidence else None,
                 })
 
             logger.info(f"Returning {len(results)} top predictions (min_score={min_score}, days={days})")
@@ -542,6 +608,254 @@ def get_top_predictions(
 
     except Exception as e:
         logger.error(f"Error getting top predictions: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/opportunities-tomorrow")
+@limiter.limit("10/minute")  # Rate limit: 10 requests per minute
+def get_opportunities_tomorrow(
+    request: Request,
+    limit: int = 10,
+    min_confidence: float = 0.7,
+    min_r2: float = 0.95
+):
+    """
+    Get top stock opportunities for tomorrow's trading session.
+
+    Combines multiple signals:
+    1. Recent bullish signals with high confidence (from research model)
+    2. Trained price models with high R² scores (from price prediction model)
+    3. ML prediction probabilities
+
+    Returns stocks ranked by composite opportunity score.
+
+    Args:
+        limit: Maximum number of stocks to return (default: 10)
+        min_confidence: Minimum LLM confidence threshold (default: 0.7)
+        min_r2: Minimum R² score for price models (default: 0.95)
+
+    Returns:
+        List of opportunity dicts with ticker, scores, and metadata
+    """
+    try:
+        with PerformanceMonitor("opportunities_endpoint_total"):
+            # Check for valid cached opportunities in database
+            with get_db_context() as db:
+                cached_opps = (
+                    db.query(OpportunityCache)
+                    .filter(OpportunityCache.expires_at > datetime.utcnow())
+                    .order_by(OpportunityCache.composite_score.desc())
+                    .limit(limit)
+                    .all()
+                )
+
+                if cached_opps:
+                    logger.info(f"💾 Returning {len(cached_opps)} cached opportunities from database")
+                    return [opp.to_dict() for opp in cached_opps]
+
+            # No valid cache, compute fresh opportunities
+            logger.info("🔄 Computing fresh opportunities (cache miss or expired)")
+
+            # Load model registry from cache (5-minute TTL)
+            with PerformanceMonitor("load_model_registry"):
+                registry_path = pathlib.Path("models/registry.json")
+                trained_models = get_model_registry_cached(registry_path)
+
+            # Get recent bullish articles from database (last 7 days)
+            cutoff_time = datetime.now(ZoneInfo("America/New_York")) - timedelta(days=7)
+
+            with get_db_context() as db, PerformanceMonitor("database_queries"):
+                # Get articles with bullish LLM analysis
+                recent_articles = (
+                    db.query(Article)
+                    .filter(Article.llm_plan.isnot(None))
+                    .filter(Article.published_at >= cutoff_time)
+                    .all()
+                )
+
+                # Extract all tickers from articles
+                tickers_to_query = set()
+                article_map = {}  # ticker -> article with highest confidence
+
+                for article in recent_articles:
+                    llm_plan = article.llm_plan
+                    if not llm_plan:
+                        continue
+
+                    ticker = llm_plan.get("ticker")
+                    stance = llm_plan.get("stance", "NEUTRAL")
+                    confidence = llm_plan.get("confidence_0to1", 0.0)
+
+                    # Only consider bullish signals with high confidence
+                    if stance != "BULLISH" or confidence < min_confidence:
+                        continue
+
+                    if not ticker:
+                        continue
+
+                    tickers_to_query.add(ticker)
+
+                    # Keep article with highest confidence per ticker
+                    if ticker not in article_map or confidence > article_map[ticker]["confidence"]:
+                        article_map[ticker] = {
+                            "article": article,
+                            "confidence": confidence,
+                            "llm_plan": llm_plan,
+                        }
+
+                # Batch query: Get latest signal for each ticker in one query
+                # This replaces N individual queries with 1 query
+                signal_map = {}
+                if tickers_to_query:
+                    # Check memory cache first
+                    cache_key = f"signals_batch:{','.join(sorted(tickers_to_query))}"
+                    cached_signals = get_signal_batch_cached(cache_key)
+
+                    if cached_signals is not None:
+                        signal_map = cached_signals
+                        logger.info(f"Loaded {len(signal_map)} signals from memory cache")
+                    else:
+                        # Subquery to get max timestamp per symbol
+                        subquery = (
+                            db.query(
+                                Signal.symbol,
+                                func.max(Signal.t).label('max_t')
+                            )
+                            .filter(Signal.symbol.in_(tickers_to_query))
+                            .group_by(Signal.symbol)
+                            .subquery()
+                        )
+
+                        # Join to get full signal records
+                        signals = (
+                            db.query(Signal)
+                            .join(
+                                subquery,
+                                (Signal.symbol == subquery.c.symbol) & (Signal.t == subquery.c.max_t)
+                            )
+                            .all()
+                        )
+
+                        # Build signal map for O(1) lookup
+                        signal_map = {s.symbol: s for s in signals}
+
+                        # Cache the results
+                        cache_signal_batch(cache_key, signal_map)
+                        logger.info(f"Loaded {len(signal_map)} signals from database (batch query)")
+
+                # Build opportunity scores
+                opportunities = {}
+
+                for ticker, article_data in article_map.items():
+                    article = article_data["article"]
+                    confidence = article_data["confidence"]
+                    llm_plan = article_data["llm_plan"]
+
+                    # Check if we have a trained model for this ticker
+                    model_key_5y = f"{ticker}_5y"
+                    model_key_10y = f"{ticker}_10y"
+
+                    model_metadata = None
+                    if model_key_10y in trained_models:
+                        model_metadata = trained_models[model_key_10y]
+                    elif model_key_5y in trained_models:
+                        model_metadata = trained_models[model_key_5y]
+
+                    # Get signal from batch query or cache
+                    signal_score = 50.0  # Default
+                    ml_confidence = 0.5  # Default
+                    signal_timestamp = article.published_at.timestamp()
+
+                    # Check in-memory cache first
+                    if ticker in SIGNAL_CACHE:
+                        cached_signal = SIGNAL_CACHE[ticker]
+                        signal_score = cached_signal.get("score", 50.0)
+                        ml_metadata = cached_signal.get("ml_metadata", {})
+                        ml_confidence = ml_metadata.get("ml_probability", 0.5) or 0.5
+                        signal_timestamp = cached_signal.get("timestamp", signal_timestamp)
+                    elif ticker in signal_map:
+                        # Use batched signal data
+                        signal = signal_map[ticker]
+                        signal_score = signal.score
+                        signal_timestamp = signal.t / 1000  # Convert ms to seconds
+
+                    # Base score from signal (0-100)
+                    composite_score = signal_score * 0.4
+
+                    # Add LLM confidence boost (0-30 points)
+                    composite_score += confidence * 30
+
+                    # Add ML confidence boost (0-20 points)
+                    composite_score += (ml_confidence or 0.5) * 20
+
+                    # Add model quality boost if available (0-10 points)
+                    model_r2 = 0.0
+                    if model_metadata and model_metadata.get("r2_score", 0.0) >= min_r2:
+                        model_r2 = model_metadata.get("r2_score", 0.0)
+                        composite_score += (model_r2 - min_r2) / (1.0 - min_r2) * 10
+
+                    # Store or update opportunity (keep highest score per ticker)
+                    if ticker not in opportunities or composite_score > opportunities[ticker]["composite_score"]:
+                        opportunities[ticker] = {
+                            "symbol": ticker,
+                            "composite_score": round(composite_score, 2),
+                            "signal_score": round(signal_score, 2),
+                            "llm_confidence": round(confidence, 2),
+                            "llm_stance": stance,
+                            "ml_confidence": round(ml_confidence, 2),
+                            "model_r2": round(model_r2, 4) if model_r2 > 0 else None,
+                            "model_trained": model_metadata is not None,
+                            "model_mode": model_metadata.get("mode") if model_metadata else None,
+                            "article_id": article.id,
+                            "article_title": article.title[:100],
+                            "signal_timestamp": signal_timestamp,
+                        }
+
+                # Sort by composite score and return top N
+                sorted_opportunities = sorted(
+                    opportunities.values(),
+                    key=lambda x: x["composite_score"],
+                    reverse=True
+                )[:limit]
+
+                logger.info(
+                    f"Returning {len(sorted_opportunities)} opportunities for tomorrow "
+                    f"(min_confidence={min_confidence}, min_r2={min_r2})"
+                )
+
+                # Persist opportunities to database (15-minute TTL)
+                with get_db_context() as db:
+                    # Clear old opportunities
+                    db.query(OpportunityCache).delete()
+
+                    # Save new opportunities
+                    expires_at = datetime.utcnow() + timedelta(minutes=15)
+                    for opp in sorted_opportunities:
+                        cached_opp = OpportunityCache(
+                            symbol=opp["symbol"],
+                            composite_score=opp["composite_score"],
+                            signal_score=opp["signal_score"],
+                            llm_confidence=opp["llm_confidence"],
+                            llm_stance=opp["llm_stance"],
+                            ml_confidence=opp["ml_confidence"],
+                            model_r2=opp["model_r2"],
+                            model_trained=opp["model_trained"],
+                            model_mode=opp["model_mode"],
+                            article_id=opp["article_id"],
+                            article_title=opp["article_title"],
+                            signal_timestamp=opp["signal_timestamp"],
+                            cached_at=datetime.utcnow(),
+                            expires_at=expires_at,
+                        )
+                        db.add(cached_opp)
+
+                    db.commit()
+                    logger.info(f"💾 Saved {len(sorted_opportunities)} opportunities to database cache (expires in 15 min)")
+
+                return sorted_opportunities
+
+    except Exception as e:
+        logger.error(f"Error getting opportunities for tomorrow: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -631,9 +945,9 @@ def predict_tomorrow_chart(request: Request, symbol: str) -> Dict[str, Any]:
         market_open = next_day.replace(hour=9, minute=30, second=0, microsecond=0)
         market_close = next_day.replace(hour=16, minute=0, second=0, microsecond=0)
 
-        # Generate data points every 5 minutes (78 points for 6.5 hour trading day)
+        # Generate data points every 30 minutes (13 points for 6.5 hour trading day)
         data_points = []
-        interval_minutes = 5
+        interval_minutes = 30
         total_minutes = 390  # 6.5 hours
         num_points = total_minutes // interval_minutes
 

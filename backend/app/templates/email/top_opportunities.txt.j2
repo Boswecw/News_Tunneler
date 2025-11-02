@@ -1,0 +1,66 @@
+================================================================================
+📊 DAILY OPPORTUNITIES REPORT
+================================================================================
+
+{{ session_label }} Session
+{{ report_date }} at {{ report_time }}
+
+================================================================================
+📈 MARKET SNAPSHOT
+================================================================================
+
+Market Mood:        {{ market_snapshot.market_mood }}
+Confidence Range:   {{ market_snapshot.confidence_range }}
+
+{% if market_snapshot.notable_catalysts %}
+Notable Catalysts:
+{% for catalyst in market_snapshot.notable_catalysts %}
+  • {{ catalyst }}
+{% endfor %}
+{% endif %}
+
+================================================================================
+🚀 BEST OPPORTUNITIES TO BUY ({{ buys|length }})
+================================================================================
+Stocks predicted to rise — consider buying now to sell later for profit
+
+{% if buys %}
+Ticker  Expected  Conf.  R²     RSI   Trend
+------  --------  -----  -----  ----  ---------------
+{% for opp in buys %}
+{{ "%-6s"|format(opp.symbol) }}  {{ "%+6.1f%%"|format(opp.expected_return_pct) }}  {{ "%4.0f%%"|format((opp.llm_confidence or opp.ml_confidence or 0) * 100) }}  {{ "%.2f"|format(opp.model_r2 or 0) }}  {{ "%4.0f"|format(opp.rsi or 0) }}  {{ opp.trend }}
+{% endfor %}
+{% else %}
+No buy opportunities meet the criteria today.
+{% endif %}
+
+================================================================================
+📉 BEST OPPORTUNITIES TO SELL ({{ sells|length }})
+================================================================================
+Stocks predicted to decline — consider selling now before they drop
+
+{% if sells %}
+Ticker  Expected  Conf.  R²     RSI   Trend
+------  --------  -----  -----  ----  ---------------
+{% for opp in sells %}
+{{ "%-6s"|format(opp.symbol) }}  {{ "%+6.1f%%"|format(opp.expected_return_pct) }}  {{ "%4.0f%%"|format((opp.llm_confidence or opp.ml_confidence or 0) * 100) }}  {{ "%.2f"|format(opp.model_r2 or 0) }}  {{ "%4.0f"|format(opp.rsi or 0) }}  {{ opp.trend }}
+{% endfor %}
+{% else %}
+No sell opportunities meet the criteria today.
+{% endif %}
+
+================================================================================
+⚠️  DISCLAIMER
+================================================================================
+
+This report is for informational and educational purposes only. It does not
+constitute financial advice, investment recommendations, or an offer to buy
+or sell securities. Past performance does not guarantee future results.
+Always conduct your own research and consult with a qualified financial
+advisor before making investment decisions.
+
+================================================================================
+News Tunneler • Automated Trading Insights
+Generated on {{ report_date }} at {{ report_time }}
+================================================================================
+

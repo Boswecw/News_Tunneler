@@ -1,8 +1,11 @@
-import { createSignal, For, onMount } from "solid-js";
+import { createSignal, For, onMount, onCleanup, createEffect } from "solid-js";
 import RunningLineChart from "../components/RunningLineChart";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 const WS_BASE = API_BASE.replace("http://", "ws://").replace("https://", "wss://");
+
+const STORAGE_KEY = "news-tunneler-live-charts-state";
+const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 interface ChartConfig {
   symbol: string;
@@ -11,72 +14,156 @@ interface ChartConfig {
   color?: string;
 }
 
-interface TopPrediction {
+interface Opportunity {
   symbol: string;
-  score: number;
-  label: string;
-  t: number;
+  composite_score: number;
+  signal_score: number;
+  llm_confidence: number;
+  llm_stance: string;
+  ml_confidence: number;
+  model_r2: number | null;
+  model_trained: boolean;
+  model_mode: string | null;
+  article_id: number;
+  article_title: string;
+  signal_timestamp: number;
+}
+
+interface PersistedState {
+  charts: ChartConfig[];
+  timestamp: number;
+  opportunities?: Opportunity[];
+}
+
+// Load persisted state from localStorage
+function loadPersistedState(): PersistedState | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+
+    const state: PersistedState = JSON.parse(stored);
+
+    // Check if cache is still valid (within 5 minutes)
+    const age = Date.now() - state.timestamp;
+    if (age > CACHE_DURATION_MS) {
+      console.log("Persisted state expired, will fetch fresh data");
+      return null;
+    }
+
+    console.log(`Loaded persisted state (age: ${Math.round(age / 1000)}s)`);
+    return state;
+  } catch (error) {
+    console.error("Error loading persisted state:", error);
+    return null;
+  }
+}
+
+// Save state to localStorage
+function savePersistedState(charts: ChartConfig[], opportunities?: Opportunity[]) {
+  try {
+    const state: PersistedState = {
+      charts,
+      timestamp: Date.now(),
+      opportunities,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    console.log("Saved state to localStorage");
+  } catch (error) {
+    console.error("Error saving state:", error);
+  }
 }
 
 export default function LiveCharts() {
   const [charts, setCharts] = createSignal<ChartConfig[]>([]);
   const [loading, setLoading] = createSignal(true);
+  const [opportunities, setOpportunities] = createSignal<Opportunity[]>([]);
+  const [loadedFromCache, setLoadedFromCache] = createSignal(false);
 
   const [newSymbol, setNewSymbol] = createSignal("");
   const [newType, setNewType] = createSignal<"price" | "sentiment">("price");
   const [newSourceType, setNewSourceType] = createSignal<"sse" | "ws">("sse");
 
-  // Fetch top predictions on mount (using 30 days of data for better ML predictions)
-  onMount(async () => {
-    try {
-      const response = await fetch(`${API_BASE}/signals/top-predictions?limit=5&min_score=50&days=30`);
-      if (response.ok) {
-        const predictions: TopPrediction[] = await response.json();
+  // Auto-save state when charts change
+  createEffect(() => {
+    const currentCharts = charts();
+    const currentOpportunities = opportunities();
+    if (currentCharts.length > 0) {
+      savePersistedState(currentCharts, currentOpportunities);
+    }
+  });
 
-        // Create charts for top predicted stocks
+  // Fetch top opportunities for tomorrow on mount
+  onMount(async () => {
+    // Try to load persisted state first
+    const persisted = loadPersistedState();
+    if (persisted && persisted.charts.length > 0) {
+      setCharts(persisted.charts);
+      if (persisted.opportunities) {
+        setOpportunities(persisted.opportunities);
+      }
+      setLoadedFromCache(true);
+      setLoading(false);
+      console.log(`Restored ${persisted.charts.length} charts from localStorage`);
+      return;
+    }
+
+    // No valid persisted state, fetch fresh data
+    try {
+      // Use lower thresholds to get top opportunities from available signals
+      const response = await fetch(`${API_BASE}/api/signals/opportunities-tomorrow?limit=3&min_confidence=0.0&min_r2=0.0`);
+      if (response.ok) {
+        const fetchedOpportunities: Opportunity[] = await response.json();
+        setOpportunities(fetchedOpportunities);
+
+        // Create charts for top opportunities (limit to 3 to avoid overwhelming the browser)
         const newCharts: ChartConfig[] = [];
-        predictions.forEach((pred) => {
-          // Add price chart
+        fetchedOpportunities.forEach((opp) => {
+          // Add price chart only (predictions will show in price chart)
           newCharts.push({
-            symbol: pred.symbol,
+            symbol: opp.symbol,
             type: "price",
             sourceType: "sse",
             color: "#3b82f6",
           });
-          // Add sentiment chart
-          newCharts.push({
-            symbol: pred.symbol,
-            type: "sentiment",
-            sourceType: "sse",
-            color: "#10b981",
-          });
         });
 
         setCharts(newCharts);
-        console.log(`Auto-loaded ${predictions.length} top predictions`);
+        console.log(`✅ Auto-loaded ${fetchedOpportunities.length} top opportunities for tomorrow (${newCharts.length} charts)`);
+        console.log("Opportunities:", fetchedOpportunities);
       } else {
-        console.error("Failed to fetch top predictions");
+        console.error("Failed to fetch opportunities for tomorrow");
         // Fallback to default charts
         setCharts([
           { symbol: "AAPL", type: "price", sourceType: "sse", color: "#3b82f6" },
-          { symbol: "AAPL", type: "sentiment", sourceType: "sse", color: "#10b981" },
         ]);
       }
     } catch (error) {
-      console.error("Error fetching top predictions:", error);
+      console.error("Error fetching opportunities for tomorrow:", error);
       // Fallback to default charts
       setCharts([
         { symbol: "AAPL", type: "price", sourceType: "sse", color: "#3b82f6" },
-        { symbol: "AAPL", type: "sentiment", sourceType: "sse", color: "#10b981" },
       ]);
     } finally {
       setLoading(false);
     }
   });
 
+  // Cleanup on unmount
+  onCleanup(() => {
+    console.log("LiveCharts page unmounting - cleaning up all charts");
+    // Clear all charts to trigger cleanup in child components
+    setCharts([]);
+  });
+
   const addChart = () => {
     const symbol = newSymbol().trim().toUpperCase();
     if (!symbol) return;
+
+    // Limit to 8 charts max to avoid overwhelming the browser
+    if (charts().length >= 8) {
+      alert("Maximum of 8 charts reached. Please remove a chart before adding a new one.");
+      return;
+    }
 
     setCharts([
       ...charts(),
@@ -92,6 +179,44 @@ export default function LiveCharts() {
 
   const removeChart = (index: number) => {
     setCharts(charts().filter((_, i) => i !== index));
+  };
+
+  const clearCache = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setLoadedFromCache(false);
+    console.log("Cleared localStorage cache");
+    alert("Cache cleared! Refresh the page to load fresh data.");
+  };
+
+  const refreshOpportunities = async () => {
+    setLoading(true);
+    setLoadedFromCache(false);
+    try {
+      // Use lower thresholds to get top opportunities from available signals
+      const response = await fetch(`${API_BASE}/api/signals/opportunities-tomorrow?limit=3&min_confidence=0.0&min_r2=0.0`);
+      if (response.ok) {
+        const fetchedOpportunities: Opportunity[] = await response.json();
+        setOpportunities(fetchedOpportunities);
+
+        const newCharts: ChartConfig[] = [];
+        fetchedOpportunities.forEach((opp) => {
+          // Add price chart only (predictions will show in price chart)
+          newCharts.push({
+            symbol: opp.symbol,
+            type: "price",
+            sourceType: "sse",
+            color: "#3b82f6",
+          });
+        });
+
+        setCharts(newCharts);
+        console.log(`✅ Refreshed ${fetchedOpportunities.length} opportunities`);
+      }
+    } catch (error) {
+      console.error("Error refreshing opportunities:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getChartUrl = (chart: ChartConfig) => {
@@ -112,19 +237,51 @@ export default function LiveCharts() {
       <div class="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div class="mb-8">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg">
-              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-              </svg>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                </svg>
+              </div>
+              <div>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                  Live Market Data
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">
+                  Real-time price and sentiment streaming for top predicted stocks
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 class="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                Live Market Data
-              </h1>
-              <p class="text-gray-600 dark:text-gray-400 mt-1">
-                Real-time price and sentiment streaming for top predicted stocks
-              </p>
+            <div class="flex items-center gap-2">
+              {loadedFromCache() && (
+                <div class="flex items-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-lg text-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Loaded from cache</span>
+                </div>
+              )}
+              <button
+                onClick={refreshOpportunities}
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                title="Refresh opportunities"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+              <button
+                onClick={clearCache}
+                class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                title="Clear cached data"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Clear Cache
+              </button>
             </div>
           </div>
         </div>
@@ -200,7 +357,7 @@ export default function LiveCharts() {
         </div>
 
         {/* Charts Grid */}
-        <div class="grid gap-6 lg:grid-cols-2">
+        <div class="grid gap-6 grid-cols-1">
         <For each={charts()}>
           {(chart, index) => (
             <div class="group backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
@@ -250,7 +407,7 @@ export default function LiveCharts() {
                   yAxisLabel={getYAxisLabel(chart)}
                   color={chart.color}
                   maxPoints={200}
-                  height={320}
+                  height={450}
                 />
               </div>
             </div>
@@ -291,9 +448,9 @@ export default function LiveCharts() {
                   </svg>
                 </div>
                 <div>
-                  <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-1">Auto-Loaded Predictions</h4>
+                  <h4 class="font-semibold text-gray-800 dark:text-gray-200 mb-1">Auto-Loaded Opportunities</h4>
                   <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Charts automatically load for the top 5 stocks with highest ML prediction scores from the last 30 days.
+                    Charts automatically load for the top 3 stocks with strongest signals based on composite scoring (signal strength + LLM confidence + ML predictions). Each stock gets a price chart showing real-time data during market hours and full-day predictions after hours.
                   </p>
                 </div>
               </div>

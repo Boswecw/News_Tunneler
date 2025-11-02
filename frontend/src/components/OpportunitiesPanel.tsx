@@ -20,7 +20,7 @@ type Signal = {
 };
 
 const fetchTopSignals = async (): Promise<Signal[]> => {
-  const response = await fetch("http://localhost:8000/signals/top?limit=20");
+  const response = await fetch("http://localhost:8000/api/signals/top?limit=20");
   if (!response.ok) {
     throw new Error("Failed to fetch signals");
   }

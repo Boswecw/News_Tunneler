@@ -40,4 +40,7 @@ torch>=2.0.0               # PyTorch for transformers
 sentencepiece>=0.1.99      # Tokenization
 shap>=0.43.0               # Model explainability
 ta>=0.11.0                 # Technical analysis indicators
+joblib>=1.3.0              # Model persistence
+pyarrow>=14.0.0            # Parquet support
+river>=0.21.0              # Online learning for research model
 

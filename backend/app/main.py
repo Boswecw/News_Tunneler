@@ -7,13 +7,15 @@ from app.core.db import engine
 from app.core.logging import logger
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.core.structured_logging import setup_structured_logging, get_logger
+from app.core.memory_cache import cache_cleanup_task
 from app.models import Base
-from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, ml
+from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, ml, research, training, predict_bounds
 from app.api import settings as settings_router
 from app.middleware.rate_limit import limiter, custom_rate_limit_handler
 from app.middleware.request_id import RequestIDMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+import asyncio
 
 config = get_settings()
 
@@ -34,6 +36,10 @@ async def lifespan(app: FastAPI):
     structured_logger.info("Database tables created/verified")
     start_scheduler()
     structured_logger.info("Scheduler started")
+
+    # Start cache cleanup task
+    asyncio.create_task(cache_cleanup_task())
+    structured_logger.info("Cache cleanup task started")
 
     yield
 
@@ -78,6 +84,9 @@ app.include_router(stream.router)
 app.include_router(signals.router)
 app.include_router(admin.router)
 app.include_router(ml.router)
+app.include_router(research.router)
+app.include_router(training.router)
+app.include_router(predict_bounds.router)
 
 
 @app.get("/health")

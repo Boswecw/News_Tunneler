@@ -8,6 +8,9 @@ from .webhook import Webhook, WebhookType
 from .price_cache import PriceCache
 from .signal import Signal
 from .model_run import ModelRun
+from .research import ResearchFeatures, ResearchLabels
+from .opportunity import OpportunityCache
+from .prediction_bounds import PredictionBounds
 
 __all__ = [
     "Base",
@@ -22,5 +25,9 @@ __all__ = [
     "PriceCache",
     "Signal",
     "ModelRun",
+    "ResearchFeatures",
+    "ResearchLabels",
+    "OpportunityCache",
+    "PredictionBounds",
 ]
 

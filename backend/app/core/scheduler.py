@@ -6,6 +6,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
+from typing import Dict, Any
 from app.core.db import get_db_context
 from app.core.config import get_settings
 from app.core.logging import logger
@@ -23,11 +24,62 @@ from app.core.tickers import extract_ticker
 from app.core.notifiers import notify_alert, send_morning_digest_job, send_evening_digest_job
 from app.core.llm import analyze_article
 from app.core.strategies import map_to_strategy
-from app.models import Source, Article, Score, Setting
+from app.core.predictive import train_symbol
+from app.models import Source, Article, Score, Setting, PredictionBounds
 from app.api.websocket import broadcast_alert
 
 settings = get_settings()
 scheduler = BackgroundScheduler()
+
+
+async def trigger_price_model_training(ticker: str, plan: Dict[str, Any]) -> None:
+    """
+    Trigger price model training in background for a ticker with strong bullish signal.
+
+    This runs asynchronously without blocking the article processing pipeline.
+
+    Args:
+        ticker: Stock ticker symbol
+        plan: LLM analysis plan containing stance and confidence
+    """
+    try:
+        stance = plan.get("stance", "NEUTRAL")
+        confidence = plan.get("confidence_0to1", 0.0)
+
+        # Only train on strong bullish signals
+        if stance != "BULLISH" or confidence < 0.7:
+            logger.debug(f"Skipping training for {ticker}: stance={stance}, confidence={confidence:.2f}")
+            return
+
+        logger.info(f"🚀 Auto-triggering price model training for {ticker} (stance={stance}, confidence={confidence:.2f})")
+
+        # Import here to avoid circular dependency
+        import httpx
+
+        # Trigger training via internal API call (10y mode for robust predictions)
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            response = await client.post(
+                f"http://localhost:8000/api/training/train/{ticker}",
+                params={
+                    "mode": "10y",
+                    "retain": "window",  # Keep 180 days for future reference
+                    "window_days": 180,
+                    "archive": True
+                }
+            )
+
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(
+                    f"✅ Successfully trained {ticker}: R²={result['r2_score']:.4f}, "
+                    f"observations={result['n_observations']}, "
+                    f"model_path={result['model_path']}"
+                )
+            else:
+                logger.error(f"❌ Training failed for {ticker}: {response.status_code} - {response.text}")
+
+    except Exception as e:
+        logger.error(f"Error triggering training for {ticker}: {e}", exc_info=True)
 
 
 async def poll_feeds() -> None:
@@ -246,6 +298,13 @@ def process_high_score_articles(limit: int = 10) -> None:
                         }
                         result = generate_signals(signal_payload)
                         logger.info(f"Generated {result['count']} signals for article {article.id}")
+
+                        # Auto-trigger price model training for strong bullish signals
+                        ticker = plan.get("ticker")
+                        if ticker:
+                            # Run training in background without blocking
+                            asyncio.create_task(trigger_price_model_training(ticker, plan))
+
                     except Exception as sig_err:
                         logger.error(f"Error generating signals for article {article.id}: {sig_err}")
 
@@ -293,6 +352,176 @@ def _run_poll_feeds_sync():
             loop.close()
     except Exception as e:
         logger.error(f"Error in scheduled poll: {e}", exc_info=True)
+
+
+def refresh_opportunities_cache() -> None:
+    """
+    Refresh the opportunities cache by calling the opportunities endpoint.
+
+    This runs periodically to ensure fresh opportunities are always available,
+    even after backend restarts.
+    """
+    try:
+        import httpx
+        logger.info("🔄 Refreshing opportunities cache...")
+
+        # Call the opportunities endpoint to trigger cache refresh
+        response = httpx.get(
+            "http://localhost:8000/api/signals/opportunities-tomorrow",
+            params={"limit": 10},
+            timeout=30.0
+        )
+
+        if response.status_code == 200:
+            data = response.json()
+            logger.info(f"✅ Refreshed opportunities cache with {len(data)} opportunities")
+        else:
+            logger.error(f"❌ Failed to refresh opportunities cache: {response.status_code}")
+
+    except Exception as e:
+        logger.error(f"Error refreshing opportunities cache: {e}", exc_info=True)
+
+
+def refresh_bounds_for_watchlist() -> None:
+    """
+    Refresh intraday bounds predictions for watchlist tickers.
+
+    Runs during market hours (9:30 AM - 4:00 PM ET) every minute.
+    Generates predictions and optionally stores them in database.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        from pathlib import Path
+        import yfinance as yf
+        import pandas as pd
+
+        # Check if we're in market hours
+        et_tz = ZoneInfo("America/New_York")
+        now_et = datetime.now(et_tz)
+        hour = now_et.hour
+        minute = now_et.minute
+
+        # Market hours: 9:30 AM - 4:00 PM ET
+        if hour < 9 or (hour == 9 and minute < 30) or hour >= 16:
+            # Outside market hours, skip
+            return
+
+        # Get config
+        settings = get_settings()
+        interval = settings.intraday_interval
+        horizons = settings.intraday_horizons_list
+        store_db = settings.predict_store_db
+
+        # Get watchlist tickers (from recent signals or opportunities)
+        with get_db_context() as db:
+            from app.models import Signal
+            from sqlalchemy import distinct
+
+            # Get tickers with recent signals (last 24 hours)
+            cutoff = datetime.utcnow() - timedelta(hours=24)
+            cutoff_ms = int(cutoff.timestamp() * 1000)
+
+            tickers = db.query(distinct(Signal.symbol)).filter(
+                Signal.t >= cutoff_ms
+            ).limit(20).all()  # Limit to 20 tickers to avoid overload
+
+            tickers = [t[0] for t in tickers]
+
+        if not tickers:
+            logger.debug("No tickers in watchlist for bounds refresh")
+            return
+
+        logger.info(f"Refreshing bounds for {len(tickers)} tickers: {tickers}")
+
+        # Import ML modules
+        from app.ml.intraday_features import make_intraday_features
+        from app.ml.intraday_models import load_model
+
+        # Process each ticker
+        for ticker in tickers:
+            try:
+                # Check if models exist
+                model_dir = Path("backend/app/ml/artifacts")
+
+                for H in horizons:
+                    # Find model files
+                    high_models = list(model_dir.glob(f"intraday_bounds_{ticker}_{interval}_high_{H}bars_*.joblib"))
+                    low_models = list(model_dir.glob(f"intraday_bounds_{ticker}_{interval}_low_{H}bars_*.joblib"))
+
+                    if not high_models or not low_models:
+                        logger.debug(f"No models found for {ticker} horizon={H}, skipping")
+                        continue
+
+                    # Load most recent models
+                    model_high_path = sorted(high_models)[-1]
+                    model_low_path = sorted(low_models)[-1]
+
+                    model_high, metadata_high = load_model(model_high_path)
+                    model_low, metadata_low = load_model(model_low_path)
+
+                    # Fetch recent data
+                    stock = yf.Ticker(ticker)
+                    df = stock.history(period='7d' if interval == '1m' else '60d', interval=interval)
+
+                    if df.empty or len(df) < 50:
+                        logger.warning(f"Insufficient data for {ticker}")
+                        continue
+
+                    # Create features
+                    features = make_intraday_features(df, include_session_context=True)
+
+                    # Predict
+                    pred_high = model_high.predict(features)
+                    pred_low = model_low.predict(features)
+
+                    # Get quantiles
+                    quantiles = sorted(pred_high.keys())
+                    lower_q = quantiles[0]
+                    upper_q = quantiles[-1]
+
+                    # Get latest prediction
+                    latest_idx = len(features) - 1
+                    upper_bound = pred_high[upper_q][latest_idx]
+                    lower_bound = pred_low[lower_q][latest_idx]
+                    mid = (upper_bound + lower_bound) / 2
+
+                    ts_ms = int(df.index[latest_idx].timestamp() * 1000)
+                    model_version = metadata_high.get('trained_at', 'unknown')
+
+                    # Store in database if enabled
+                    if store_db:
+                        with get_db_context() as db:
+                            # Check if prediction already exists
+                            existing = db.query(PredictionBounds).filter(
+                                PredictionBounds.ticker == ticker,
+                                PredictionBounds.ts == ts_ms,
+                                PredictionBounds.interval == interval,
+                                PredictionBounds.horizon == H
+                            ).first()
+
+                            if not existing:
+                                prediction = PredictionBounds(
+                                    ticker=ticker,
+                                    ts=ts_ms,
+                                    interval=interval,
+                                    horizon=H,
+                                    lower=round(lower_bound, 2),
+                                    upper=round(upper_bound, 2),
+                                    mid=round(mid, 2),
+                                    model_version=model_version
+                                )
+                                db.add(prediction)
+                                db.commit()
+                                logger.debug(f"Stored bounds for {ticker} horizon={H}")
+
+                    logger.debug(f"✅ Refreshed bounds for {ticker} horizon={H}: [{lower_bound:.2f}, {upper_bound:.2f}]")
+
+            except Exception as e:
+                logger.warning(f"Error refreshing bounds for {ticker}: {e}")
+                continue
+
+    except Exception as e:
+        logger.error(f"Error in bounds refresh job: {e}", exc_info=True)
 
 
 def start_scheduler() -> None:
@@ -398,8 +627,73 @@ def start_scheduler() -> None:
         max_instances=1,
     )
 
+    # Add predictive model training job - runs at 4:10 PM ET (after market close)
+    scheduler.add_job(
+        train_predictive_models,
+        trigger=CronTrigger(hour=16, minute=10, day_of_week='mon-fri', timezone='America/New_York'),
+        id="predictive_training",
+        name="Train predictive models (4:10 PM ET, Mon-Fri)",
+        replace_existing=True,
+        misfire_grace_time=600,  # Allow up to 10 minutes delay
+        coalesce=True,
+        max_instances=1,
+    )
+
+    # Add research auto-labeling job - runs at 2 AM ET daily
+    scheduler.add_job(
+        run_research_autolabel,
+        trigger=CronTrigger(hour=2, minute=0, timezone='America/New_York'),
+        id="research_autolabel",
+        name="Research auto-labeling (2 AM ET)",
+        replace_existing=True,
+        misfire_grace_time=600,  # Allow up to 10 minutes delay
+        coalesce=True,
+        max_instances=1,
+    )
+
+    # Add opportunities cache refresh job - runs every 15 minutes
+    scheduler.add_job(
+        refresh_opportunities_cache,
+        trigger=IntervalTrigger(minutes=15),
+        id="refresh_opportunities",
+        name="Refresh opportunities cache (every 15 min)",
+        replace_existing=True,
+        misfire_grace_time=300,  # Allow up to 5 minutes delay
+        coalesce=True,
+        max_instances=1,
+    )
+
+    # Add daily opportunities report job - runs at 7:00 AM ET Mon-Fri
+    scheduler.add_job(
+        send_daily_opportunities_report,
+        trigger=CronTrigger(
+            day_of_week='mon-fri',
+            hour=7,
+            minute=0,
+            timezone='America/New_York'
+        ),
+        id="daily_opportunities_report",
+        name="Send daily opportunities report (7:00 AM ET Mon-Fri)",
+        replace_existing=True,
+        misfire_grace_time=300,  # Allow up to 5 minutes delay
+        coalesce=True,
+        max_instances=1,
+    )
+
+    # Add intraday bounds refresh job - runs every minute during market hours
+    scheduler.add_job(
+        refresh_bounds_for_watchlist,
+        trigger=IntervalTrigger(minutes=1),
+        id="refresh_intraday_bounds",
+        name="Refresh intraday bounds predictions (every 1 min during market hours)",
+        replace_existing=True,
+        misfire_grace_time=60,  # Allow up to 1 minute delay
+        coalesce=True,
+        max_instances=1,
+    )
+
     scheduler.start()
-    logger.info("Scheduler started with RSS polling, morning digest (11 AM ET), evening digest (5 PM ET), cleanup (1 AM ET), and bulk LLM analysis (4x daily)")
+    logger.info("Scheduler started with RSS polling, morning digest (11 AM ET), evening digest (5 PM ET), cleanup (1 AM ET), bulk LLM analysis (4x daily), predictive training (4:10 PM ET Mon-Fri), research auto-labeling (2 AM ET), opportunities refresh (every 15 min), daily opportunities report (7:00 AM ET Mon-Fri), and intraday bounds refresh (every 1 min during market hours)")
 
     # Run first poll immediately in background
     import threading
@@ -440,6 +734,107 @@ def cleanup_old_articles() -> None:
 
     except Exception as e:
         logger.error(f"Error cleaning up old articles: {e}", exc_info=True)
+
+
+def train_predictive_models() -> None:
+    """Train predictive models for all active symbols after market close."""
+    try:
+        logger.info("Starting predictive model training...")
+
+        # Get list of symbols from intraday cache
+        from app.api.stream import _intraday_cache
+
+        symbols = list(_intraday_cache.keys())
+
+        if not symbols:
+            logger.info("No symbols in cache, skipping predictive training")
+            return
+
+        success_count = 0
+        fail_count = 0
+
+        for symbol in symbols:
+            try:
+                cache_entry = _intraday_cache.get(symbol)
+                if cache_entry and cache_entry.get("data"):
+                    logger.info(f"Training predictive model for {symbol}...")
+                    success = train_symbol(symbol, cache_entry["data"])
+                    if success:
+                        success_count += 1
+                        logger.info(f"Successfully trained model for {symbol}")
+                    else:
+                        fail_count += 1
+                        logger.warning(f"Failed to train model for {symbol}")
+                else:
+                    logger.warning(f"No data available for {symbol}")
+                    fail_count += 1
+            except Exception as e:
+                logger.error(f"Error training model for {symbol}: {e}")
+                fail_count += 1
+
+        logger.info(f"Predictive training complete: {success_count} successful, {fail_count} failed")
+
+    except Exception as e:
+        logger.error(f"Error in predictive model training: {e}", exc_info=True)
+
+
+def run_research_autolabel() -> None:
+    """Run research auto-labeling job to generate training labels from realized returns."""
+    try:
+        logger.info("Starting research auto-labeling job...")
+        from app.jobs.research_autolabel import run
+        run(limit=250)
+        logger.info("Research auto-labeling job complete")
+    except Exception as e:
+        logger.error(f"Error in research auto-labeling job: {e}", exc_info=True)
+
+
+def send_daily_opportunities_report() -> None:
+    """
+    Send daily opportunities email report at 7:00 AM ET (Mon-Fri).
+
+    Determines session label based on current time:
+    - Before 9 AM: Pre-Market
+    - 9 AM - 4 PM: Mid-Day
+    - After 4 PM: After-Close
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        from app.services.mailer import send_top_opportunities_report
+
+        settings = get_settings()
+        recipients = settings.report_recipients
+
+        if not recipients:
+            logger.warning("No report recipients configured; skipping daily report")
+            return
+
+        # Determine session label based on current ET time
+        et_tz = ZoneInfo("America/New_York")
+        now_et = datetime.now(et_tz)
+        hour = now_et.hour
+
+        if hour < 9:
+            session_label = "Pre-Market"
+        elif hour < 16:
+            session_label = "Mid-Day"
+        else:
+            session_label = "After-Close"
+
+        logger.info(f"Sending daily opportunities report ({session_label}) to {len(recipients)} recipients...")
+
+        result = send_top_opportunities_report(recipients, session_label=session_label)
+
+        if result.get("success"):
+            logger.info(
+                f"✅ Daily report sent successfully: {result['report_id']} "
+                f"({result['candidates_count']} candidates)"
+            )
+        else:
+            logger.error(f"❌ Daily report failed: {result.get('error')}")
+
+    except Exception as e:
+        logger.error(f"Error sending daily opportunities report: {e}", exc_info=True)
 
 
 def stop_scheduler() -> None:

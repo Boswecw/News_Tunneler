@@ -17,27 +17,35 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Create ml_models table
-    op.create_table(
-        'ml_models',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('version', sa.String(), nullable=False),
-        sa.Column('model_type', sa.String(), nullable=False),
-        sa.Column('model_path', sa.String(), nullable=False),
-        sa.Column('metrics', sa.JSON(), nullable=False),
-        sa.Column('feature_importance', sa.JSON(), nullable=True),
-        sa.Column('hyperparameters', sa.JSON(), nullable=True),
-        sa.Column('training_samples', sa.Integer(), nullable=True),
-        sa.Column('is_active', sa.Boolean(), nullable=False, server_default='false'),
-        sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.PrimaryKeyConstraint('id')
-    )
+    # Check if table already exists
+    conn = op.get_bind()
+    result = conn.execute(sa.text(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='ml_models'"
+    ))
+    table_exists = result.fetchone() is not None
 
-    # Create indexes
-    op.create_index('ix_ml_models_version', 'ml_models', ['version'], unique=True)
-    op.create_index('ix_ml_models_model_type', 'ml_models', ['model_type'])
-    op.create_index('ix_ml_models_is_active', 'ml_models', ['is_active'])
+    if not table_exists:
+        # Create ml_models table
+        op.create_table(
+            'ml_models',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('version', sa.String(), nullable=False),
+            sa.Column('model_type', sa.String(), nullable=False),
+            sa.Column('model_path', sa.String(), nullable=False),
+            sa.Column('metrics', sa.JSON(), nullable=False),
+            sa.Column('feature_importance', sa.JSON(), nullable=True),
+            sa.Column('hyperparameters', sa.JSON(), nullable=True),
+            sa.Column('training_samples', sa.Integer(), nullable=True),
+            sa.Column('is_active', sa.Boolean(), nullable=False, server_default='false'),
+            sa.Column('created_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.Column('updated_at', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
+            sa.PrimaryKeyConstraint('id')
+        )
+
+        # Create indexes
+        op.create_index('ix_ml_models_version', 'ml_models', ['version'], unique=True)
+        op.create_index('ix_ml_models_model_type', 'ml_models', ['model_type'])
+        op.create_index('ix_ml_models_is_active', 'ml_models', ['is_active'])
 
 
 def downgrade() -> None:

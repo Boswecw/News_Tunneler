@@ -1,0 +1,182 @@
+{
+  "AAPL_10y": {
+    "ticker": "AAPL",
+    "mode": "10y",
+    "param_hash": "b0cec1ee687a9364",
+    "r2_score": 0.9993871817325811,
+    "n_observations": 2464,
+    "trained_at": "2025-10-30T02:23:06.865452Z",
+    "model_path": "models/AAPL_10y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2015-10-30",
+    "date_range_end": "2025-10-29",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": "models/archives/AAPL_10y_2025-10-29.parquet.gz"
+  },
+  "NVDA_10y": {
+    "ticker": "NVDA",
+    "mode": "10y",
+    "param_hash": "bcc39c10344491c6",
+    "r2_score": 0.9993389535320124,
+    "n_observations": 2464,
+    "trained_at": "2025-10-30T03:14:45.120717Z",
+    "model_path": "models/NVDA_10y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2015-10-30",
+    "date_range_end": "2025-10-29",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": "models/archives/NVDA_10y_2025-10-29.parquet.gz"
+  },
+  "MSFT_10y": {
+    "ticker": "MSFT",
+    "mode": "10y",
+    "param_hash": "264fb006c46a4350",
+    "r2_score": 0.9995617125011622,
+    "n_observations": 2464,
+    "trained_at": "2025-10-30T06:35:34.112716Z",
+    "model_path": "models/MSFT_10y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2015-10-30",
+    "date_range_end": "2025-10-29",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": "models/archives/MSFT_10y_2025-10-30.parquet.gz"
+  },
+  "META_10y": {
+    "ticker": "META",
+    "mode": "10y",
+    "param_hash": "618ec86226c73e3d",
+    "r2_score": 0.9989177285136113,
+    "n_observations": 2464,
+    "trained_at": "2025-10-30T06:36:24.931075Z",
+    "model_path": "models/META_10y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2015-10-30",
+    "date_range_end": "2025-10-29",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": "models/archives/META_10y_2025-10-30.parquet.gz"
+  },
+  "TSLA_10y": {
+    "ticker": "TSLA",
+    "mode": "10y",
+    "param_hash": "f4c99a41e0443ceb",
+    "r2_score": 0.9979770810689048,
+    "n_observations": 2464,
+    "trained_at": "2025-10-30T06:37:30.142871Z",
+    "model_path": "models/TSLA_10y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2015-10-30",
+    "date_range_end": "2025-10-29",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": "models/archives/TSLA_10y_2025-10-30.parquet.gz"
+  }
+}

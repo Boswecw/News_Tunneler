@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 })
 
 // Articles
@@ -124,11 +125,57 @@ export const updateSettings = async (data: Partial<Settings>): Promise<Settings>
 // Health
 export const healthCheck = async (): Promise<boolean> => {
   try {
+    console.log('Health check: Calling /health endpoint...')
     const response = await api.get('/health')
+    console.log('Health check: Response received', response.status)
     return response.status === 200
-  } catch {
+  } catch (error) {
+    console.error('Health check: Failed', error)
     return false
   }
+}
+
+// Intraday Bounds Prediction
+export interface BoundsPoint {
+  ts: number  // milliseconds
+  lower: number
+  upper: number
+  mid: number
+  current_price?: number
+}
+
+export interface BoundsResponse {
+  ticker: string
+  interval: string
+  horizon: number
+  model_version: string
+  points: BoundsPoint[]
+  metadata: Record<string, any>
+}
+
+export const getIntradayBounds = async (
+  ticker: string,
+  interval: string = '1m',
+  horizon: number = 5,
+  limit: number = 200
+): Promise<BoundsResponse> => {
+  const response = await api.get(`/predict/intraday-bounds/${ticker}`, {
+    params: { interval, horizon, limit },
+    timeout: 30000, // 30 second timeout for ML predictions
+  })
+  return response.data
+}
+
+export const getIntradayBoundsFromDB = async (
+  ticker: string,
+  interval: string = '1m',
+  horizon: number = 5,
+  limit: number = 200
+): Promise<BoundsResponse> => {
+  const response = await api.get(`/predict/intraday-bounds/db/${ticker}`, {
+    params: { interval, horizon, limit },
+  })
+  return response.data
 }
 
 export default api

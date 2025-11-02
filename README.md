@@ -44,6 +44,7 @@ News Tunneler is a comprehensive trading analytics platform that aggregates fina
 #### **Live Charts**
 - **Market Hours Mode**: Real-time streaming price + sentiment charts (updates every minute)
 - **After-Hours Mode**: ML-generated predictions for next trading session
+- **Intraday Bounds Prediction**: ML-powered high/low bounds for 5/15/30-minute horizons
 - **Buy/Sell Signals**: Predicted optimal entry/exit points on prediction charts
 - **Auto-Loading**: Top 5 predicted stocks load automatically
 - **Custom Watchlist**: Add any ticker to track
@@ -81,7 +82,41 @@ News Tunneler is a comprehensive trading analytics platform that aggregates fina
 
 ---
 
-## 🚀 Advanced ML Features (Phase 3 & 4)
+## 🚀 Advanced ML Features (Phase 3, 4 & 5)
+
+### **Phase 5: Intraday Bounds Prediction** ✅
+
+#### **1. ML-Powered High/Low Prediction**
+- **Quantile Regression Models**: XGBoost/LightGBM with quantile loss (q10, q90)
+- **Multiple Horizons**: 5-minute, 15-minute, 30-minute ahead predictions
+- **Real-Time Updates**: Bounds refresh every minute during market hours
+- **No-Look-Ahead Guarantee**: Features at time t only use data from indices ≤ t
+- **Walk-Forward Validation**: Time-based train/test split (no random shuffle)
+
+#### **2. Feature Engineering (30+ Intraday Features)**
+- **Price Features**: Returns, volatility, range, gaps, normalized price
+- **Volume Features**: Volume ratio, VWAP distance, volume momentum
+- **Technical Indicators**: RSI, MACD, Bollinger Bands, ATR, momentum
+- **Temporal Features**: Time of day, market session, normalized time
+- **Microstructure**: Bid-ask spread proxies, price acceleration
+
+#### **3. Training & Backtesting**
+- **Training CLI**: `python -m app.ml.train_intraday_bounds --ticker AAPL --interval 1m --horizons 5 15 --days 7`
+- **Backtest CLI**: `python -m app.ml.backtest_bounds --ticker AAPL --interval 1m --horizon 5`
+- **Performance Metrics**: Coverage rate, band width, pinball loss, MAE
+- **Model Persistence**: Joblib serialization with versioning
+
+#### **4. API Integration**
+- **Prediction Endpoint**: `GET /predict/intraday-bounds/{ticker}?interval=1m&horizon=5&limit=200`
+- **Batch Predictions**: `POST /predict/intraday-bounds/batch`
+- **Database Storage**: SQLAlchemy model for caching predictions
+- **Scheduler Integration**: Automatic bounds refresh during market hours
+
+#### **5. Frontend Visualization**
+- **Shaded Area Bands**: Indigo-colored confidence intervals on charts
+- **Toggle Controls**: Enable/disable bounds overlay
+- **Horizon Selector**: Switch between 5m, 15m, 30m predictions
+- **Enhanced Tooltip**: Shows current price, bounds, and band width percentage
 
 ### **Phase 3: ML Enhancements** ✅
 
@@ -246,6 +281,11 @@ News Tunneler is a comprehensive trading analytics platform that aggregates fina
 - `GET /api/signals/tickers/{symbol}/score` - Latest ML score for ticker
 - `POST /api/signals/recalculate/{symbol}` - Force recalculation of signal
 - `GET /api/signals/ml-status` - Get ML system status (models, features, caching)
+
+**Intraday Bounds Prediction (Phase 5)**
+- `GET /predict/intraday-bounds/{ticker}` - Get intraday high/low bounds predictions
+- `POST /predict/intraday-bounds/batch` - Batch bounds predictions for multiple tickers
+- `GET /predict/intraday-bounds/db/{ticker}` - Get cached bounds from database
 
 **Advanced ML (Phase 3 & 4)**
 - `POST /api/ml/train` - Train ML models with feature engineering

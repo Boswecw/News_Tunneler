@@ -61,6 +61,21 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     redis_db: int = 0
 
+    # Daily Opportunities Report
+    report_recipients: list[str] = []  # Email addresses for daily report
+    report_min_confidence: float = 0.70  # Minimum confidence threshold
+    report_min_expected_return_pct: float = 1.0  # Minimum expected return %
+    report_min_r2: float = 0.95  # Minimum R² score
+    report_max_tickers_per_side: int = 8  # Max tickers per buy/sell side
+    enable_report_pdf: bool = False  # Enable PDF attachment (requires WeasyPrint)
+    admin_token: str = ""  # Admin token for manual report triggers
+
+    # Intraday Bounds Prediction
+    intraday_interval: str = "1m"  # Data interval for intraday predictions
+    intraday_horizons: str = "5,15"  # Comma-separated prediction horizons
+    bounds_quantiles: str = "0.1,0.9"  # Comma-separated quantiles
+    predict_store_db: bool = False  # Whether to store predictions in database
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -71,6 +86,11 @@ class Settings(BaseSettings):
             if field_name == 'cors_origins':
                 if not raw_val or raw_val.strip() == '':
                     return ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"]
+                import json
+                return json.loads(raw_val)
+            if field_name == 'report_recipients':
+                if not raw_val or raw_val.strip() == '':
+                    return []
                 import json
                 return json.loads(raw_val)
             return raw_val
@@ -106,6 +126,21 @@ class Settings(BaseSettings):
         if self.use_postgresql:
             return self.postgres_url
         return self.database_url
+
+    @property
+    def report_enabled(self) -> bool:
+        """Check if daily report is enabled (has recipients and email configured)."""
+        return bool(self.report_recipients and self.email_enabled)
+
+    @property
+    def intraday_horizons_list(self) -> list[int]:
+        """Parse intraday_horizons string to list of integers."""
+        return [int(h.strip()) for h in self.intraday_horizons.split(',') if h.strip()]
+
+    @property
+    def bounds_quantiles_list(self) -> list[float]:
+        """Parse bounds_quantiles string to list of floats."""
+        return [float(q.strip()) for q in self.bounds_quantiles.split(',') if q.strip()]
 
 
 @lru_cache()
