@@ -1,5 +1,6 @@
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
+gunicorn>=21.2.0               # Production WSGI server
 sqlalchemy==2.0.23
 alembic==1.12.1
 feedparser==6.0.10

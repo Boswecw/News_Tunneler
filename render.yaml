@@ -1,0 +1,148 @@
+services:
+  # Backend API
+  - type: web
+    name: news-tunneler-backend
+    runtime: python
+    region: oregon
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: ENV
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: USE_POSTGRESQL
+        value: true
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: news-tunneler-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: news-tunneler-db
+          property: port
+      - key: POSTGRES_DB
+        fromDatabase:
+          name: news-tunneler-db
+          property: database
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: news-tunneler-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: news-tunneler-db
+          property: password
+      - key: REDIS_HOST
+        fromService:
+          type: redis
+          name: news-tunneler-redis
+          property: host
+      - key: REDIS_PORT
+        fromService:
+          type: redis
+          name: news-tunneler-redis
+          property: port
+      - key: JWT_SECRET_KEY
+        generateValue: true
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 30
+      - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
+        value: 7
+      - key: REQUIRE_AUTH
+        value: false
+      - key: ALLOW_REGISTRATION
+        value: true
+      - key: PROMETHEUS_ENABLED
+        value: true
+      - key: PROMETHEUS_PORT
+        value: 9090
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NEWSAPI_KEY
+        sync: false
+      - key: ALPHAVANTAGE_KEY
+        sync: false
+      - key: POLYGON_API_KEY
+        sync: false
+      - key: SLACK_WEBHOOK_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: ALERT_EMAIL_TO
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+
+  # Frontend Static Site
+  - type: web
+    name: news-tunneler-frontend
+    runtime: static
+    region: oregon
+    plan: starter
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: news-tunneler-backend
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: VITE_WS_URL
+        fromService:
+          type: web
+          name: news-tunneler-backend
+          envVarKey: RENDER_EXTERNAL_URL
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    autoDeploy: true
+
+databases:
+  - name: news-tunneler-db
+    databaseName: news_tunneler
+    user: news_tunneler
+    region: oregon
+    plan: starter
+    ipAllowList: []
+
+  - name: news-tunneler-redis
+    region: oregon
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+

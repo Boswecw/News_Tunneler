@@ -1081,40 +1081,62 @@ bun test
 
 ## 🚢 Deployment
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Render (One-Click Deploy) ⭐ Recommended
 
-**Full Stack with PostgreSQL + Redis:**
+Deploy to Render with PostgreSQL and Redis in minutes:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Boswecw/News_Tunneler)
+
+**What's included:**
+- ✅ Backend API with auto-scaling
+- ✅ Frontend static site with CDN
+- ✅ PostgreSQL database (managed)
+- ✅ Redis cache (managed)
+- ✅ Automatic SSL certificates
+- ✅ Auto-deploy on git push
+
+**Pricing:** Free tier available, Starter plan $24/month
+
+📖 **[Full Render Deployment Guide](docs/RENDER_DEPLOYMENT.md)**
+
+---
+
+### Option 2: Docker Compose (Self-Hosted)
+
+**Production Stack with PostgreSQL + Redis + Monitoring:**
 
 ```bash
+# Generate secure secrets
 cd backend
+python -m app.cli.generate_secrets
 
-# Start infrastructure (PostgreSQL, Redis, PgAdmin)
-docker-compose up -d
+# Review and update .env file
+# Add API keys, SMTP settings, etc.
 
-# Run migrations
-USE_POSTGRESQL=true alembic upgrade head
+# Start production stack
+cd ..
+docker-compose -f docker-compose.prod.yml up -d
 
-# Start Celery worker (separate terminal)
-celery -A app.core.celery_app worker --loglevel=info -Q llm,rss,digest
+# Create admin user
+docker exec -it news-tunneler-backend python -m app.cli.create_admin
 
-# Start Celery Beat (separate terminal)
-celery -A app.core.celery_app beat --loglevel=info
-
-# Start backend (separate terminal)
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# Start frontend (separate terminal)
-cd ../frontend
-bun run dev
+# (Optional) Start monitoring
+docker-compose -f docker-compose.prod.yml --profile monitoring up -d
 ```
 
 **Services:**
 - Backend: http://localhost:8000
-- Frontend: http://localhost:5173
-- PgAdmin: http://localhost:5050 (admin@admin.com / admin)
-- Flower (Celery monitoring): http://localhost:5555 (if started)
+- Frontend: http://localhost:3000
+- PostgreSQL: localhost:5432
+- Redis: localhost:6379
+- Prometheus: http://localhost:9090 (with monitoring profile)
+- Grafana: http://localhost:3001 (with monitoring profile)
 
-### Option 2: Manual Deployment
+📖 **[Full Docker Deployment Guide](docs/DEPLOYMENT.md)**
+
+---
+
+### Option 3: Manual Deployment
 
 #### Backend (Production)
 
@@ -1132,18 +1154,13 @@ export REDIS_HOST=your-redis-host
 export OPENAI_API_KEY=sk-...
 
 # Run migrations
-USE_POSTGRESQL=true alembic upgrade head
+alembic upgrade head
 
-# Start Celery worker (background or separate process manager)
-celery -A app.core.celery_app worker --loglevel=info -Q llm,rss,digest -D
-
-# Start Celery Beat (background or separate process manager)
-celery -A app.core.celery_app beat --loglevel=info -D
+# Create admin user
+python -m app.cli.create_admin
 
 # Start with Gunicorn (4 workers)
 gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
-
-# Or use systemd/supervisor for process management
 ```
 
 #### Frontend (Production)
@@ -1152,28 +1169,31 @@ gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
 cd frontend
 
 # Build for production
-bun run build
+npm install
+npm run build
 
-# Preview build
-bun run preview
-
-# Or serve with nginx/caddy
+# Serve with nginx/caddy
 # Copy dist/ folder to web server
 ```
 
-### Option 3: Cloud Deployment
+---
 
-**Backend (Railway, Render, Fly.io):**
+### Option 4: Other Cloud Platforms
+
+**Backend (Railway, Fly.io, Heroku):**
 1. Connect GitHub repo
-2. Set environment variables
+2. Set environment variables (see `.env.example`)
 3. Deploy from `backend/` directory
-4. Run migrations on first deploy
+4. Run migrations: `alembic upgrade head`
+5. Create admin user: `python -m app.cli.create_admin`
 
 **Frontend (Vercel, Netlify, Cloudflare Pages):**
 1. Connect GitHub repo
-2. Set build command: `cd frontend && bun run build`
+2. Set build command: `cd frontend && npm install && npm run build`
 3. Set output directory: `frontend/dist`
-4. Set environment variables (VITE_API_BASE)
+4. Set environment variables:
+   - `VITE_API_URL`: Your backend URL
+   - `VITE_WS_URL`: Your backend WebSocket URL
 
 ## 🛠️ Development
 
