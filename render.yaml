@@ -45,7 +45,6 @@ services:
         value: 6379
       - key: JWT_SECRET_KEY
         generateValue: true
-        sync: false
       - key: JWT_ALGORITHM
         value: HS256
       - key: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
@@ -89,7 +88,6 @@ services:
   - type: web
     name: news-tunneler-frontend
     runtime: static
-    region: oregon
     plan: starter
     rootDir: frontend
     buildCommand: npm install && npm run build
