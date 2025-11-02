@@ -1,16 +1,18 @@
-import { onMount, createSignal, Show, Component } from 'solid-js'
+import { onMount, createSignal, Show, Component, lazy } from 'solid-js'
 import { Router } from '@solidjs/router'
 import { useStore } from './lib/store'
 import { getSettings, healthCheck } from './lib/api'
 import { connectWebSocket, setStoreRef } from './lib/ws'
-import Dashboard from './pages/Dashboard'
-import Alerts from './pages/Alerts'
-import Sources from './pages/Sources'
-import Settings from './pages/Settings'
-import LiveCharts from './pages/LiveCharts'
-import Opportunities from './pages/Opportunities'
-import FAQ from './pages/FAQ'
 import Navigation from './components/Navigation'
+
+// Lazy load pages for better performance
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Alerts = lazy(() => import('./pages/Alerts'))
+const Sources = lazy(() => import('./pages/Sources'))
+const Settings = lazy(() => import('./pages/Settings'))
+const LiveCharts = lazy(() => import('./pages/LiveCharts'))
+const Opportunities = lazy(() => import('./pages/Opportunities'))
+const FAQ = lazy(() => import('./pages/FAQ'))
 
 const routes = [
   {

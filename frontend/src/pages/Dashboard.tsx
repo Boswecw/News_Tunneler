@@ -58,7 +58,7 @@ export default function Dashboard() {
               </svg>
             </div>
             <p class="text-gray-600 dark:text-gray-400 font-medium mb-1">No live alerts yet</p>
-            <p class="text-sm text-gray-500 dark:text-gray-500">Waiting for high-scoring articles...</p>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Waiting for high-scoring articles...</p>
           </div>
         )}
 
