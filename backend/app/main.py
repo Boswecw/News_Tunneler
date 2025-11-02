@@ -8,8 +8,10 @@ from app.core.logging import logger
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.core.structured_logging import setup_structured_logging, get_logger
 from app.core.memory_cache import cache_cleanup_task
+from app.core.secrets import validate_secrets_on_startup
+from app.core.monitoring import setup_monitoring
 from app.models import Base
-from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, ml, research, training, predict_bounds
+from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, ml, research, training, predict_bounds, auth
 from app.api import settings as settings_router
 from app.middleware.rate_limit import limiter, custom_rate_limit_handler
 from app.middleware.request_id import RequestIDMiddleware
@@ -32,6 +34,10 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown."""
     # Startup
     structured_logger.info("Starting news-tunneler backend...", extra={'version': '1.0.0'})
+
+    # Validate secrets
+    validate_secrets_on_startup(config.env)
+
     Base.metadata.create_all(bind=engine)
     structured_logger.info("Database tables created/verified")
     start_scheduler()
@@ -56,6 +62,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Setup Prometheus monitoring
+setup_monitoring(app)
+
 # Request ID middleware (must be first for proper logging)
 app.add_middleware(RequestIDMiddleware)
 
@@ -77,6 +86,7 @@ app.add_middleware(
 app.include_router(articles.router)
 app.include_router(sources.router)
 app.include_router(settings_router.router)
+app.include_router(auth.router)
 app.include_router(websocket.router)
 app.include_router(analysis.router)
 app.include_router(backtest.router)

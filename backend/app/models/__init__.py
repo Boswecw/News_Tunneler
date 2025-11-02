@@ -11,6 +11,7 @@ from .model_run import ModelRun
 from .research import ResearchFeatures, ResearchLabels
 from .opportunity import OpportunityCache
 from .prediction_bounds import PredictionBounds
+from .user import User, UserRole
 
 __all__ = [
     "Base",
@@ -29,5 +30,7 @@ __all__ = [
     "ResearchLabels",
     "OpportunityCache",
     "PredictionBounds",
+    "User",
+    "UserRole",
 ]
 

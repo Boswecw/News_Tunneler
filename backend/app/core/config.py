@@ -76,6 +76,20 @@ class Settings(BaseSettings):
     bounds_quantiles: str = "0.1,0.9"  # Comma-separated quantiles
     predict_store_db: bool = False  # Whether to store predictions in database
 
+    # Authentication & Security
+    jwt_secret_key: str = "your-secret-key-change-in-production-min-32-chars"
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
+    require_auth: bool = False  # Enable authentication requirement
+    allow_registration: bool = True  # Allow new user registration
+
+    # Monitoring & Observability
+    prometheus_enabled: bool = True
+    prometheus_port: int = 9090
+    log_level: str = "INFO"
+    sentry_dsn: str = ""  # Sentry error tracking
+
     class Config:
         env_file = ".env"
         case_sensitive = False
