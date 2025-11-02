@@ -38,6 +38,7 @@ News Tunneler is a comprehensive trading analytics platform that aggregates fina
 - **📈 Backtesting Engine**: Validate strategies against historical data with detailed performance metrics
 - **🔍 Multi-Source Intelligence**: Monitors SEC filings, financial news, FDA approvals, energy reports, and more
 - **💡 AI Trading Plans**: GPT-4 generated entry/exit strategies with risk management
+- **📱 Progressive Web App**: Install on any device with offline support and native app experience
 
 ## ✨ Features
 

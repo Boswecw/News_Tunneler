@@ -4,6 +4,7 @@ import { useStore } from './lib/store'
 import { getSettings, healthCheck } from './lib/api'
 import { connectWebSocket, setStoreRef } from './lib/ws'
 import Navigation from './components/Navigation'
+import InstallPrompt from './components/InstallPrompt'
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -102,6 +103,9 @@ function AppContent(props: { children?: any }) {
           </Show>
         </main>
       </div>
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </div>
   )
 }

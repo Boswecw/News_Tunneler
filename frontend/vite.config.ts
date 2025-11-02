@@ -14,11 +14,24 @@ export default defineConfig({
         target: 'ws://localhost:8000',
         ws: true,
       },
+      '/predict': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
   build: {
     target: 'esnext',
     polyfillDynamicImport: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['solid-js', '@solidjs/router'],
+          'charts': ['solid-apexcharts'],
+          'utils': ['date-fns', 'axios'],
+        },
+      },
+    },
   },
 })
 
