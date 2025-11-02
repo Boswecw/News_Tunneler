@@ -12,8 +12,10 @@ export default function Navigation() {
             <div class="relative">
               <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
               <img
-                src="/logo.webp"
+                src="/logo-small.webp"
                 alt="News Tunneler Logo"
+                width="80"
+                height="80"
                 class="h-20 w-20 rounded-2xl relative z-10 ring-2 ring-white/50 dark:ring-white/20 group-hover:ring-white/70 dark:group-hover:ring-white/30 transition-all group-hover:scale-105"
               />
             </div>
