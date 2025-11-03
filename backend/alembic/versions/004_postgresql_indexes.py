@@ -66,27 +66,27 @@ def upgrade() -> None:
     # Note: GIN indexes on JSON columns require JSONB type or explicit operator class
     # Skipping GIN indexes on JSON columns for now - they're not critical for performance
     # If needed, convert JSON columns to JSONB in a future migration
-    
+
     # Articles table indexes
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_articles_search_vector 
+        CREATE INDEX IF NOT EXISTS idx_articles_search_vector
         ON articles USING GIN (
-            to_tsvector('english', coalesce(title, '') || ' ' || coalesce(content, ''))
+            to_tsvector('english', coalesce(title, '') || ' ' || coalesce(summary, ''))
         )
     """)
-    
+
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_articles_title_trgm 
+        CREATE INDEX IF NOT EXISTS idx_articles_title_trgm
         ON articles USING GIN (title gin_trgm_ops)
     """)
-    
-    # Sources table indexes
+
+    # Sources table indexes (enabled column, not active)
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_sources_active 
-        ON sources (active, name) 
-        WHERE active = true
+        CREATE INDEX IF NOT EXISTS idx_sources_enabled_name
+        ON sources (enabled, name)
+        WHERE enabled = true
     """)
-    
+
     print("PostgreSQL-specific indexes created successfully")
 
 
@@ -108,7 +108,7 @@ def downgrade() -> None:
     op.execute("DROP INDEX IF EXISTS idx_signals_label_score")
     op.execute("DROP INDEX IF EXISTS idx_articles_search_vector")
     op.execute("DROP INDEX IF EXISTS idx_articles_title_trgm")
-    op.execute("DROP INDEX IF EXISTS idx_sources_active")
+    op.execute("DROP INDEX IF EXISTS idx_sources_enabled_name")
 
     print("PostgreSQL-specific indexes removed successfully")
 
