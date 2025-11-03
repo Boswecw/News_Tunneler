@@ -38,67 +38,42 @@ def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
     op.execute("CREATE EXTENSION IF NOT EXISTS btree_gin")
     
-    # 1. Full-text search index on signals (title + content)
-    # Create tsvector column for full-text search
+    # 1. Partial index for high-score signals (most frequently queried)
     op.execute("""
-        ALTER TABLE signals 
-        ADD COLUMN IF NOT EXISTS search_vector tsvector 
-        GENERATED ALWAYS AS (
-            setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-            setweight(to_tsvector('english', coalesce(content, '')), 'B')
-        ) STORED
+        CREATE INDEX IF NOT EXISTS idx_signals_high_score
+        ON signals (score DESC, created_at DESC)
+        WHERE score >= 50.0
     """)
-    
-    # Create GIN index on search vector
+
+    # 2. Partial index for recent signals (last 7 days)
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_search_vector 
-        ON signals USING GIN (search_vector)
-    """)
-    
-    # 2. Trigram index for fuzzy text search on title
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_title_trgm 
-        ON signals USING GIN (title gin_trgm_ops)
-    """)
-    
-    # 3. Partial index for high-score signals (most frequently queried)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_high_score 
-        ON signals (total_score DESC, created_at DESC) 
-        WHERE total_score >= 10.0
-    """)
-    
-    # 4. Partial index for recent signals (last 7 days)
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_recent 
-        ON signals (created_at DESC, total_score DESC) 
+        CREATE INDEX IF NOT EXISTS idx_signals_recent
+        ON signals (created_at DESC, score DESC)
         WHERE created_at >= NOW() - INTERVAL '7 days'
     """)
-    
-    # 5. Composite index for ticker + date range queries
+
+    # 3. Composite index for symbol + timestamp queries
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_ticker_date 
-        ON signals (ticker, created_at DESC) 
-        WHERE ticker IS NOT NULL
+        CREATE INDEX IF NOT EXISTS idx_signals_symbol_t
+        ON signals (symbol, t DESC)
     """)
-    
-    # 6. GIN index for multi-column searches (ticker + score + date)
+
+    # 4. Index for label-based queries
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_composite_gin 
-        ON signals USING GIN (ticker, total_score, created_at)
+        CREATE INDEX IF NOT EXISTS idx_signals_label_score
+        ON signals (label, score DESC)
     """)
-    
-    # 7. Index for source-based queries
+
+    # 5. GIN index for features JSONB column
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_source_date 
-        ON signals (source, created_at DESC)
+        CREATE INDEX IF NOT EXISTS idx_signals_features_gin
+        ON signals USING GIN (features)
     """)
-    
-    # 8. Partial index for analyzed signals (has LLM scores)
+
+    # 6. GIN index for reasons JSONB column
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_analyzed 
-        ON signals (created_at DESC) 
-        WHERE catalyst_score > 0 OR novelty_score > 0 OR credibility_score > 0
+        CREATE INDEX IF NOT EXISTS idx_signals_reasons_gin
+        ON signals USING GIN (reasons)
     """)
     
     # Articles table indexes
@@ -134,22 +109,17 @@ def downgrade() -> None:
         return
     
     print("Removing PostgreSQL-specific indexes...")
-    
+
     # Drop indexes
-    op.execute("DROP INDEX IF EXISTS idx_signals_search_vector")
-    op.execute("DROP INDEX IF EXISTS idx_signals_title_trgm")
     op.execute("DROP INDEX IF EXISTS idx_signals_high_score")
     op.execute("DROP INDEX IF EXISTS idx_signals_recent")
-    op.execute("DROP INDEX IF EXISTS idx_signals_ticker_date")
-    op.execute("DROP INDEX IF EXISTS idx_signals_composite_gin")
-    op.execute("DROP INDEX IF EXISTS idx_signals_source_date")
-    op.execute("DROP INDEX IF EXISTS idx_signals_analyzed")
+    op.execute("DROP INDEX IF EXISTS idx_signals_symbol_t")
+    op.execute("DROP INDEX IF EXISTS idx_signals_label_score")
+    op.execute("DROP INDEX IF EXISTS idx_signals_features_gin")
+    op.execute("DROP INDEX IF EXISTS idx_signals_reasons_gin")
     op.execute("DROP INDEX IF EXISTS idx_articles_search_vector")
     op.execute("DROP INDEX IF EXISTS idx_articles_title_trgm")
     op.execute("DROP INDEX IF EXISTS idx_sources_active")
-    
-    # Drop search_vector column
-    op.execute("ALTER TABLE signals DROP COLUMN IF EXISTS search_vector")
-    
+
     print("PostgreSQL-specific indexes removed successfully")
 

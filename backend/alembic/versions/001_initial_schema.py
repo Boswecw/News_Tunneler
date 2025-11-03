@@ -103,8 +103,33 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint('id'),
     )
 
+    # Create signals table
+    op.create_table(
+        'signals',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('symbol', sa.String(), nullable=False),
+        sa.Column('article_id', sa.Integer(), nullable=True),
+        sa.Column('t', sa.BigInteger(), nullable=False),
+        sa.Column('features', sa.JSON(), nullable=False),
+        sa.Column('score', sa.Float(), nullable=False),
+        sa.Column('label', sa.String(), nullable=False),
+        sa.Column('reasons', sa.JSON(), nullable=False),
+        sa.Column('confidence', sa.Float(), nullable=True),
+        sa.Column('y_ret_1d', sa.Float(), nullable=True),
+        sa.Column('y_beat', sa.Integer(), nullable=True),
+        sa.Column('created_at', sa.DateTime(), nullable=False),
+        sa.Column('updated_at', sa.DateTime(), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_index('idx_signals_symbol', 'signals', ['symbol'])
+    op.create_index('idx_signals_article_id', 'signals', ['article_id'])
+    op.create_index('idx_signals_t', 'signals', ['t'])
+    op.create_index('idx_signals_score', 'signals', ['score'])
+    op.create_index('idx_symbol_t', 'signals', ['symbol', 't'], unique=True)
+
 
 def downgrade() -> None:
+    op.drop_table('signals')
     op.drop_table('webhooks')
     op.drop_table('settings')
     op.drop_table('scores')
