@@ -24,6 +24,7 @@ def upgrade() -> None:
     """Add additional performance indexes."""
     conn = op.get_bind()
     inspector = inspect(conn)
+    dialect_name = conn.dialect.name
 
     # Helper function to check if table exists using cross-database compatible method
     def table_exists(table_name):
@@ -39,6 +40,19 @@ def upgrade() -> None:
             CREATE INDEX IF NOT EXISTS idx_articles_published_at
             ON articles (published_at)
         """))
+
+        # PostgreSQL-specific: add a safe JSONB GIN index for LLM plan lookups
+        if dialect_name == 'postgresql':
+            try:
+                # Clean up any legacy B-tree index attempts that may exist
+                conn.execute(sa.text("DROP INDEX IF EXISTS idx_articles_llm_plan"))
+                conn.execute(sa.text("""
+                    CREATE INDEX IF NOT EXISTS idx_articles_llm_plan_gin
+                    ON articles USING GIN ((llm_plan::jsonb))
+                """))
+            except Exception as exc:
+                # Log and continue rather than failing the entire migration
+                print(f"Skipping idx_articles_llm_plan_gin creation: {exc}")
 
     # Composite index on Signal(symbol, t) for batch queries
     # This is critical for the opportunities endpoint batch query optimization
@@ -63,4 +77,4 @@ def downgrade() -> None:
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_signals_symbol"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_signals_symbol_t"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_articles_published_at"))
-
+    conn.execute(sa.text("DROP INDEX IF EXISTS idx_articles_llm_plan_gin"))
