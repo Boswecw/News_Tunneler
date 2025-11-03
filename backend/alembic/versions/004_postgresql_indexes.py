@@ -45,11 +45,10 @@ def upgrade() -> None:
         WHERE score >= 50.0
     """)
 
-    # 2. Partial index for recent signals (last 7 days)
+    # 2. Composite index for time-based queries (no predicate with NOW())
     op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_recent
+        CREATE INDEX IF NOT EXISTS idx_signals_created_score
         ON signals (created_at DESC, score DESC)
-        WHERE created_at >= NOW() - INTERVAL '7 days'
     """)
 
     # 3. Composite index for symbol + timestamp queries
@@ -112,7 +111,7 @@ def downgrade() -> None:
 
     # Drop indexes
     op.execute("DROP INDEX IF EXISTS idx_signals_high_score")
-    op.execute("DROP INDEX IF EXISTS idx_signals_recent")
+    op.execute("DROP INDEX IF EXISTS idx_signals_created_score")
     op.execute("DROP INDEX IF EXISTS idx_signals_symbol_t")
     op.execute("DROP INDEX IF EXISTS idx_signals_label_score")
     op.execute("DROP INDEX IF EXISTS idx_signals_features_gin")
