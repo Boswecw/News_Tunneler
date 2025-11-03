@@ -1,5 +1,7 @@
 services:
-  # Backend API
+  # ==============================
+  # Backend API Service
+  # ==============================
   - type: web
     name: news-tunneler-backend
     runtime: python
@@ -9,6 +11,7 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      # Core environment
       - key: PYTHON_VERSION
         value: 3.12.0
       - key: ENV
@@ -17,8 +20,14 @@ services:
         value: false
       - key: LOG_LEVEL
         value: INFO
+
+      # Database Configuration
       - key: USE_POSTGRESQL
         value: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: news-tunneler-db
+          property: connectionString
       - key: POSTGRES_HOST
         fromDatabase:
           name: news-tunneler-db
@@ -39,10 +48,14 @@ services:
         fromDatabase:
           name: news-tunneler-db
           property: password
+
+      # Caching / Background Services
       - key: REDIS_HOST
         sync: false
       - key: REDIS_PORT
         value: 6379
+
+      # JWT Authentication
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: JWT_ALGORITHM
@@ -51,14 +64,20 @@ services:
         value: "30"
       - key: JWT_REFRESH_TOKEN_EXPIRE_DAYS
         value: "7"
+
+      # Feature toggles
       - key: REQUIRE_AUTH
         value: "false"
       - key: ALLOW_REGISTRATION
         value: "true"
+
+      # Metrics / Monitoring
       - key: PROMETHEUS_ENABLED
         value: "true"
       - key: PROMETHEUS_PORT
         value: "9090"
+
+      # API Keys (synced manually)
       - key: OPENAI_API_KEY
         sync: false
       - key: NEWSAPI_KEY
@@ -67,6 +86,8 @@ services:
         sync: false
       - key: POLYGON_API_KEY
         sync: false
+
+      # Notifications
       - key: SLACK_WEBHOOK_URL
         sync: false
       - key: SMTP_HOST
@@ -79,12 +100,17 @@ services:
         sync: false
       - key: ALERT_EMAIL_TO
         sync: false
+
+      # Error Tracking
       - key: SENTRY_DSN
         sync: false
+
     healthCheckPath: /health
     autoDeploy: true
 
+  # ==============================
   # Frontend Static Site
+  # ==============================
   - type: web
     name: news-tunneler-frontend
     runtime: static
@@ -123,6 +149,9 @@ services:
         value: public, max-age=31536000, immutable
     autoDeploy: true
 
+# ==============================
+# Database
+# ==============================
 databases:
   - name: news-tunneler-db
     databaseName: news_tunneler
