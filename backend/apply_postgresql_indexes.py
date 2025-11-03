@@ -163,6 +163,19 @@ with engine.connect() as conn:
     except Exception as e:
         print(f"⚠ Articles trigram index: {e}")
     print()
+
+    print("Ensuring articles LLM plan GIN index...")
+    try:
+        conn.execute(sa.text("DROP INDEX IF EXISTS idx_articles_llm_plan"))
+        conn.execute(sa.text("""
+            CREATE INDEX IF NOT EXISTS idx_articles_llm_plan_gin
+            ON articles USING GIN (llm_plan)
+        """))
+        conn.commit()
+        print("✓ Articles LLM plan GIN index ready")
+    except Exception as e:
+        print(f"⚠ Articles LLM plan index: {e}")
+    print()
     
     # Sources table indexes
     print("Creating sources active index...")
@@ -217,4 +230,3 @@ with engine.connect() as conn:
 print("=" * 60)
 print("✓ POSTGRESQL INDEXES APPLIED SUCCESSFULLY!")
 print("=" * 60)
-
