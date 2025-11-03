@@ -63,17 +63,9 @@ def upgrade() -> None:
         ON signals (label, score DESC)
     """)
 
-    # 5. GIN index for features JSONB column
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_features_gin
-        ON signals USING GIN (features)
-    """)
-
-    # 6. GIN index for reasons JSONB column
-    op.execute("""
-        CREATE INDEX IF NOT EXISTS idx_signals_reasons_gin
-        ON signals USING GIN (reasons)
-    """)
+    # Note: GIN indexes on JSON columns require JSONB type or explicit operator class
+    # Skipping GIN indexes on JSON columns for now - they're not critical for performance
+    # If needed, convert JSON columns to JSONB in a future migration
     
     # Articles table indexes
     op.execute("""
@@ -114,8 +106,6 @@ def downgrade() -> None:
     op.execute("DROP INDEX IF EXISTS idx_signals_created_score")
     op.execute("DROP INDEX IF EXISTS idx_signals_symbol_t")
     op.execute("DROP INDEX IF EXISTS idx_signals_label_score")
-    op.execute("DROP INDEX IF EXISTS idx_signals_features_gin")
-    op.execute("DROP INDEX IF EXISTS idx_signals_reasons_gin")
     op.execute("DROP INDEX IF EXISTS idx_articles_search_vector")
     op.execute("DROP INDEX IF EXISTS idx_articles_title_trgm")
     op.execute("DROP INDEX IF EXISTS idx_sources_active")
