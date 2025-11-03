@@ -10,6 +10,7 @@ Additional performance indexes for opportunities endpoint optimization:
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -22,13 +23,11 @@ depends_on = None
 def upgrade() -> None:
     """Add additional performance indexes."""
     conn = op.get_bind()
+    inspector = inspect(conn)
 
-    # Helper function to check if table exists
+    # Helper function to check if table exists using cross-database compatible method
     def table_exists(table_name):
-        result = conn.execute(sa.text(
-            f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
-        ))
-        return result.fetchone() is not None
+        return inspector.has_table(table_name)
 
     # Index on Article.llm_plan for filtering articles with LLM analysis
     # This speeds up queries that filter by llm_plan IS NOT NULL

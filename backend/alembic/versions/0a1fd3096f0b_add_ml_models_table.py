@@ -7,6 +7,7 @@ Create Date: 2025-10-28 23:58:05.031030
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 
 # revision identifiers, used by Alembic.
@@ -17,12 +18,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Check if table already exists
+    # Check if table already exists using cross-database compatible method
     conn = op.get_bind()
-    result = conn.execute(sa.text(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='ml_models'"
-    ))
-    table_exists = result.fetchone() is not None
+    inspector = inspect(conn)
+    table_exists = inspector.has_table('ml_models')
 
     if not table_exists:
         # Create ml_models table
