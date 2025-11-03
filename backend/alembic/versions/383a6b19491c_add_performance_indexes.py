@@ -30,16 +30,11 @@ def upgrade() -> None:
         return inspector.has_table(table_name)
 
     # Index on Article.llm_plan for filtering articles with LLM analysis
-    # This speeds up queries that filter by llm_plan IS NOT NULL
+    # Note: JSON columns cannot have standard B-tree indexes in PostgreSQL
+    # We skip the llm_plan index as it's not critical for performance
+    # Queries filtering by llm_plan IS NOT NULL will use sequential scan
     if table_exists('articles'):
-        # SQLite doesn't support partial indexes on JSON columns directly
-        # But we can create an index on the column itself
-        conn.execute(sa.text("""
-            CREATE INDEX IF NOT EXISTS idx_articles_llm_plan
-            ON articles (llm_plan)
-        """))
-
-        # Also add index on published_at for date range queries
+        # Add index on published_at for date range queries
         conn.execute(sa.text("""
             CREATE INDEX IF NOT EXISTS idx_articles_published_at
             ON articles (published_at)
@@ -68,5 +63,4 @@ def downgrade() -> None:
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_signals_symbol"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_signals_symbol_t"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_articles_published_at"))
-    conn.execute(sa.text("DROP INDEX IF EXISTS idx_articles_llm_plan"))
 
