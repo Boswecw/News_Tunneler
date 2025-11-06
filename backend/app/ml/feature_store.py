@@ -6,7 +6,7 @@ Provides fast access to pre-computed features with Redis caching.
 import logging
 import json
 from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import redis
 from app.core.config import get_settings
 from app.ml.feature_engineering import FeatureEngineer
@@ -152,16 +152,16 @@ class FeatureStore:
     ) -> Dict[str, float]:
         """
         Get temporal features.
-        
+
         Args:
             timestamp: Timestamp to compute features for (None = now)
             force_refresh: Force refresh
-            
+
         Returns:
             Dict of temporal features
         """
         if timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
         
         # Create identifier from timestamp (rounded to hour)
         identifier = timestamp.strftime("%Y-%m-%d-%H")

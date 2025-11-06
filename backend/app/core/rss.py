@@ -1,7 +1,7 @@
 """RSS/Atom feed fetching and parsing."""
 import feedparser
 import httpx
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TypedDict
 from tenacity import retry, stop_after_attempt, wait_exponential
 from app.core.logging import logger
@@ -85,7 +85,7 @@ def normalize_article(
         elif entry.get("updated_parsed"):
             published_at = datetime(*entry.updated_parsed[:6])
         else:
-            published_at = datetime.utcnow()
+            published_at = datetime.now(timezone.utc)
         
         return NormalizedArticle(
             url=url,

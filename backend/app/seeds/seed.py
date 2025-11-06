@@ -2,7 +2,7 @@
 import json
 import sys
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 # Add parent to path
@@ -69,7 +69,7 @@ def seed_articles(db: Session) -> None:
         "liquidity": setting.weight_liquidity,
     }
     
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     for i, article_data in enumerate(data["articles"]):
         # Check if already exists

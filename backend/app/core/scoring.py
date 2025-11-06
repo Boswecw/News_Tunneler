@@ -1,6 +1,6 @@
 """Scoring logic for articles."""
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from .sentiment import analyze_sentiment
 from .cache import cache_result
 from .resilience import with_fallback
@@ -31,13 +31,13 @@ def score_catalyst(title: str, summary: str) -> float:
 def score_novelty(published_at: datetime) -> float:
     """
     Score novelty based on age (0-5).
-    
+
     5 if age < 6h
     3 if age < 24h
     1 otherwise
     """
-    age = datetime.utcnow() - published_at
-    
+    age = datetime.now(timezone.utc) - published_at
+
     if age < timedelta(hours=6):
         return 5.0
     elif age < timedelta(hours=24):

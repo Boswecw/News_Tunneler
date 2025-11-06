@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.models import Base, Article
 from app.core.dedupe import article_exists
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Use in-memory SQLite for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -37,7 +37,7 @@ def test_article_exists_by_url(db):
         source_name="Test Source",
         source_url="https://example.com",
         source_type="rss",
-        published_at=datetime.utcnow(),
+        published_at=datetime.now(timezone.utc),
     )
     db.add(article)
     db.commit()
@@ -56,7 +56,7 @@ def test_article_exists_by_title(db):
         source_name="Test Source",
         source_url="https://example.com",
         source_type="rss",
-        published_at=datetime.utcnow(),
+        published_at=datetime.now(timezone.utc),
     )
     db.add(article)
     db.commit()

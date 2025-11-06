@@ -146,18 +146,18 @@
   "TSLA_10y": {
     "ticker": "TSLA",
     "mode": "10y",
-    "param_hash": "f4c99a41e0443ceb",
-    "r2_score": 0.9979770810689048,
-    "n_observations": 2464,
-    "trained_at": "2025-10-30T06:37:30.142871Z",
+    "param_hash": "fa4cb81cdc7c4b40",
+    "r2_score": 0.9995904402079994,
+    "n_observations": 3600,
+    "trained_at": "2025-11-06T01:54:16.908463+00:00Z",
     "model_path": "models/TSLA_10y.pkl",
     "python_version": "3.12.3",
     "sklearn_version": "1.7.2",
     "pandas_version": "2.3.3",
     "numpy_version": "2.3.4",
     "yfinance_version": "0.2.66",
-    "date_range_start": "2015-10-30",
-    "date_range_end": "2025-10-29",
+    "date_range_start": "2015-11-09",
+    "date_range_end": "2025-11-05",
     "indicator_config": {
       "sma_periods": [
         5,
@@ -177,6 +177,294 @@
       "bb_std": 2,
       "atr_period": 14
     },
-    "archive_path": "models/archives/TSLA_10y_2025-10-30.parquet.gz"
+    "archive_path": null
+  },
+  "AAPL_5y": {
+    "ticker": "AAPL",
+    "mode": "5y",
+    "param_hash": "183c73d41a5c1bc1",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:12.313866+00:00Z",
+    "model_path": "models/AAPL_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
+  },
+  "MSFT_5y": {
+    "ticker": "MSFT",
+    "mode": "5y",
+    "param_hash": "5ab1856e8d06ba2a",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:18.832613+00:00Z",
+    "model_path": "models/MSFT_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": "models/archives/MSFT_5y_2025-11-05.parquet.gz"
+  },
+  "NVDA_5y": {
+    "ticker": "NVDA",
+    "mode": "5y",
+    "param_hash": "9b803f7ccb0a3cda",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:20.623458+00:00Z",
+    "model_path": "models/NVDA_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
+  },
+  "GOOG_5y": {
+    "ticker": "GOOG",
+    "mode": "5y",
+    "param_hash": "6c05610e96d74b59",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:22.450281+00:00Z",
+    "model_path": "models/GOOG_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
+  },
+  "AMZN_10y": {
+    "ticker": "AMZN",
+    "mode": "10y",
+    "param_hash": "92cad568a2f63ce9",
+    "r2_score": 0.9995904402079994,
+    "n_observations": 3600,
+    "trained_at": "2025-11-06T01:54:27.088335+00:00Z",
+    "model_path": "models/AMZN_10y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2015-11-09",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
+  },
+  "META_5y": {
+    "ticker": "META",
+    "mode": "5y",
+    "param_hash": "0b454956bbc4f523",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:28.960539+00:00Z",
+    "model_path": "models/META_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
+  },
+  "NFLX_5y": {
+    "ticker": "NFLX",
+    "mode": "5y",
+    "param_hash": "7dbf2407aa28af35",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:30.727389+00:00Z",
+    "model_path": "models/NFLX_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
+  },
+  "HASH_TEST_5y": {
+    "ticker": "HASH_TEST",
+    "mode": "5y",
+    "param_hash": "fbb7572e94e1a889",
+    "r2_score": 0.9989045911955529,
+    "n_observations": 1775,
+    "trained_at": "2025-11-06T01:54:33.387464+00:00Z",
+    "model_path": "models/HASH_TEST_5y.pkl",
+    "python_version": "3.12.3",
+    "sklearn_version": "1.7.2",
+    "pandas_version": "2.3.3",
+    "numpy_version": "2.3.4",
+    "yfinance_version": "0.2.66",
+    "date_range_start": "2020-11-07",
+    "date_range_end": "2025-11-05",
+    "indicator_config": {
+      "sma_periods": [
+        5,
+        10,
+        20,
+        50
+      ],
+      "ema_periods": [
+        12,
+        26
+      ],
+      "rsi_period": 14,
+      "macd_fast": 12,
+      "macd_slow": 26,
+      "macd_signal": 9,
+      "bb_period": 20,
+      "bb_std": 2,
+      "atr_period": 14
+    },
+    "archive_path": null
   }
 }

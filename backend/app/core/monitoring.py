@@ -1,6 +1,6 @@
 """Prometheus monitoring and metrics."""
 from prometheus_client import Counter, Histogram, Gauge, Info
-from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from fastapi import FastAPI
 from app.core.config import get_settings
 
@@ -126,10 +126,11 @@ def setup_monitoring(app: FastAPI) -> None:
     
     # Add custom metrics
     instrumentator.add(
-        lambda info: info.modified_duration,
-        metric_name="http_request_duration_seconds",
-        metric_doc="HTTP request duration in seconds",
-        metric_namespace="news_tunneler",
+        metrics.latency(
+            metric_name="http_request_duration_seconds",
+            metric_doc="HTTP request duration in seconds",
+            metric_namespace="news_tunneler",
+        )
     )
     
     # Instrument the app
@@ -246,4 +247,3 @@ def set_active_users(count: int) -> None:
 def set_database_connections(count: int) -> None:
     """Set the number of database connections."""
     database_connections.set(count)
-

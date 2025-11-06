@@ -140,7 +140,15 @@ class TestSendReport:
             "session_label": "Pre-Market",
             "report_date": "October 31, 2025",
             "report_time": "07:00 AM ET",
-            "buys": [{"symbol": "TSLA"}],
+            "buys": [{
+                "symbol": "TSLA",
+                "expected_return_pct": 3.5,
+                "llm_confidence": 0.85,
+                "ml_confidence": None,
+                "model_r2": 0.96,
+                "rsi": 45.0,
+                "trend": "Above SMA20",
+            }],
             "sells": [],
             "total_candidates": 1,
             "market_snapshot": {

@@ -5,7 +5,7 @@ Provides ticker-level trading signals with scores and explainability.
 """
 from fastapi import APIRouter, HTTPException, Body, Request
 from typing import List, Dict, Optional, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import desc, func
 from app.core.db import get_db_context
 from app.models import Article, Score, Signal, OpportunityCache
@@ -563,7 +563,7 @@ def get_top_predictions(
     try:
         with get_db_context() as db:
             # Calculate cutoff time (30 days back by default)
-            cutoff = datetime.utcnow() - timedelta(days=days)
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days)
             cutoff_ms = int(cutoff.timestamp() * 1000)
 
             # Query signals from last N days with score >= min_score
@@ -643,7 +643,7 @@ def get_opportunities_tomorrow(
             with get_db_context() as db:
                 cached_opps = (
                     db.query(OpportunityCache)
-                    .filter(OpportunityCache.expires_at > datetime.utcnow())
+                    .filter(OpportunityCache.expires_at > datetime.now(timezone.utc))
                     .order_by(OpportunityCache.composite_score.desc())
                     .limit(limit)
                     .all()
@@ -829,7 +829,7 @@ def get_opportunities_tomorrow(
                     db.query(OpportunityCache).delete()
 
                     # Save new opportunities
-                    expires_at = datetime.utcnow() + timedelta(minutes=15)
+                    expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
                     for opp in sorted_opportunities:
                         cached_opp = OpportunityCache(
                             symbol=opp["symbol"],
@@ -844,7 +844,7 @@ def get_opportunities_tomorrow(
                             article_id=opp["article_id"],
                             article_title=opp["article_title"],
                             signal_timestamp=opp["signal_timestamp"],
-                            cached_at=datetime.utcnow(),
+                            cached_at=datetime.now(timezone.utc),
                             expires_at=expires_at,
                         )
                         db.add(cached_opp)

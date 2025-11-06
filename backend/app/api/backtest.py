@@ -2,7 +2,7 @@
 Backtest API endpoints for analyzing historical stock reactions to news events.
 """
 from fastapi import APIRouter, HTTPException, Query, Depends
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 from sqlalchemy.orm import Session
 import json
@@ -54,7 +54,7 @@ def backtest(
         df["date"] = pd.to_datetime(df["date"])
     
     # 2) Pull events from Articles table
-    since = datetime.utcnow() - timedelta(days=lookback_days)
+    since = datetime.now(timezone.utc) - timedelta(days=lookback_days)
     
     # Build query
     q = db.query(Article).filter(

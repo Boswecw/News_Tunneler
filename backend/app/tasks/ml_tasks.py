@@ -9,7 +9,7 @@ Provides async tasks for:
 """
 import logging
 from typing import List, Dict, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from celery import Task
 from app.core.celery_app import celery_app
 from app.core.db import get_db_context
@@ -76,7 +76,7 @@ def train_ml_model_task(
             'metrics': results['metrics'],
             'training_samples': results['training_samples'],
             'test_samples': results['test_samples'],
-            'completed_at': datetime.utcnow().isoformat()
+            'completed_at': datetime.now(timezone.utc).isoformat()
         }
     
     except Exception as e:
@@ -84,7 +84,7 @@ def train_ml_model_task(
         return {
             'status': 'failed',
             'error': str(e),
-            'failed_at': datetime.utcnow().isoformat()
+            'failed_at': datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -139,7 +139,7 @@ def batch_predict_task(signal_ids: List[int], model_version: Optional[str] = Non
                 'model_version': model.version,
                 'predictions': predictions,
                 'count': len(predictions),
-                'completed_at': datetime.utcnow().isoformat()
+                'completed_at': datetime.now(timezone.utc).isoformat()
             }
     
     except Exception as e:
@@ -147,7 +147,7 @@ def batch_predict_task(signal_ids: List[int], model_version: Optional[str] = Non
         return {
             'status': 'failed',
             'error': str(e),
-            'failed_at': datetime.utcnow().isoformat()
+            'failed_at': datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -171,7 +171,7 @@ def update_sentiment_task(signal_ids: Optional[List[int]] = None, days_back: int
             if signal_ids:
                 signals = db.query(Signal).filter(Signal.id.in_(signal_ids)).all()
             else:
-                cutoff = datetime.utcnow() - timedelta(days=days_back)
+                cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
                 signals = db.query(Signal).filter(Signal.created_at >= cutoff).all()
             
             # Collect texts
@@ -216,7 +216,7 @@ def update_sentiment_task(signal_ids: Optional[List[int]] = None, days_back: int
                 'status': 'success',
                 'updated': updated,
                 'total': len(signals),
-                'completed_at': datetime.utcnow().isoformat()
+                'completed_at': datetime.now(timezone.utc).isoformat()
             }
     
     except Exception as e:
@@ -224,7 +224,7 @@ def update_sentiment_task(signal_ids: Optional[List[int]] = None, days_back: int
         return {
             'status': 'failed',
             'error': str(e),
-            'failed_at': datetime.utcnow().isoformat()
+            'failed_at': datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -292,7 +292,7 @@ def scheduled_retrain_task(min_samples: int = 100, min_new_samples: int = 20) ->
                 'task_id': result.id,
                 'total_signals': total_signals,
                 'new_signals': new_signals if last_model else total_signals,
-                'triggered_at': datetime.utcnow().isoformat()
+                'triggered_at': datetime.now(timezone.utc).isoformat()
             }
     
     except Exception as e:
@@ -300,7 +300,7 @@ def scheduled_retrain_task(min_samples: int = 100, min_new_samples: int = 20) ->
         return {
             'status': 'failed',
             'error': str(e),
-            'failed_at': datetime.utcnow().isoformat()
+            'failed_at': datetime.now(timezone.utc).isoformat()
         }
 
 
@@ -352,7 +352,7 @@ def evaluate_model_task(model_version: str, signal_ids: Optional[List[int]] = No
                 'model_version': model_version,
                 'metrics': metrics,
                 'num_samples': len(signals),
-                'completed_at': datetime.utcnow().isoformat()
+                'completed_at': datetime.now(timezone.utc).isoformat()
             }
     
     except Exception as e:
@@ -360,6 +360,6 @@ def evaluate_model_task(model_version: str, signal_ids: Optional[List[int]] = No
         return {
             'status': 'failed',
             'error': str(e),
-            'failed_at': datetime.utcnow().isoformat()
+            'failed_at': datetime.now(timezone.utc).isoformat()
         }
 

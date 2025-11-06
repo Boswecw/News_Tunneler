@@ -5,7 +5,7 @@ Adds technical indicators, sentiment aggregation, temporal features,
 and interaction features to improve model performance.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 import pandas as pd
 import numpy as np
@@ -183,15 +183,15 @@ class FeatureEngineer:
     def add_temporal_features(self, timestamp: datetime = None) -> Dict[str, float]:
         """
         Add temporal features (day of week, hour, etc.).
-        
+
         Args:
             timestamp: Timestamp to extract features from (uses current time if None)
-            
+
         Returns:
             Dict of temporal features
         """
         if timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
         
         # Day of week (0 = Monday, 6 = Sunday)
         day_of_week = timestamp.weekday()

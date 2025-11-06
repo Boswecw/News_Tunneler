@@ -5,7 +5,7 @@ Automatically generates training labels from realized market returns
 after sufficient time has passed to measure outcomes.
 """
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
 import pandas as pd
@@ -136,7 +136,7 @@ def run(limit: int = 250):
     
     try:
         # Calculate cutoff date (articles must be at least MIN_DAYS_WAIT old)
-        cutoff = (datetime.utcnow() - timedelta(days=MIN_DAYS_WAIT)).isoformat()
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=MIN_DAYS_WAIT)).isoformat()
         
         # Find unlabeled articles
         unlabeled = (
@@ -187,7 +187,7 @@ def run(limit: int = 250):
                 ret_3d=ret_3d,
                 threshold=RET_THRESHOLD,
                 entry_day=entry_day,
-                created_at=datetime.utcnow().isoformat()
+                created_at=datetime.now(timezone.utc).isoformat()
             )
             
             db.merge(label_row)

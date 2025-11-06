@@ -1,16 +1,34 @@
 """Tests for articles API."""
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta
-from app.main import app
-from app.models import Base, Article, Score
+from datetime import datetime, timedelta, timezone
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+# Import ALL models to ensure they're registered in Base.metadata
+from app.models import (
+    Base, Article, Score, User, Source, Signal,
+    OpportunityCache, PriceCache, ResearchFeatures, ResearchLabels,
+    Webhook, Setting, ModelRun, PredictionBounds
+)
 from app.core.db import get_db
 
-# Use in-memory SQLite for testing
-TEST_DATABASE_URL = "sqlite:///:memory:"
-engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+# Use shared in-memory SQLite for testing (file::memory:?cache=shared allows multiple connections)
+TEST_DATABASE_URL = "sqlite:///file:test_db?mode=memory&cache=shared&uri=true"
+engine = create_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False, "uri": True},
+    poolclass=None  # Disable connection pooling for testing
+)
+
+# Enable foreign keys for SQLite
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_conn, connection_record):
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -23,19 +41,48 @@ def override_get_db():
         db.close()
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def db():
     """Create test database."""
+    # Create all tables
     Base.metadata.create_all(bind=engine)
     yield
+    # Drop all tables after test
     Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture
+def create_test_app():
+    """Create a test FastAPI app without lifespan context."""
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Skip startup/shutdown for tests
+        yield
+
+    # Create minimal FastAPI app for testing
+    test_app = FastAPI(lifespan=lifespan)
+
+    # Import and include only the articles router for testing
+    from app.api import articles
+    test_app.include_router(articles.router)
+
+    return test_app
+
+
+@pytest.fixture(scope="function")
 def client(db):
     """Create test client."""
-    app.dependency_overrides[get_db] = override_get_db
-    return TestClient(app)
+    # Create test app
+    test_app = create_test_app()
+
+    # Override the database dependency
+    test_app.dependency_overrides[get_db] = override_get_db
+
+    # Create test client
+    with TestClient(test_app) as test_client:
+        yield test_client
+
+    # Clear overrides after test
+    test_app.dependency_overrides.clear()
 
 
 def test_list_articles_empty(client):
@@ -48,9 +95,9 @@ def test_list_articles_empty(client):
 def test_list_articles_with_data(client):
     """Test listing articles with data."""
     db = TestingSessionLocal()
-    
+
     # Create articles
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     for i in range(3):
         article = Article(
             url=f"https://example.com/article{i}",
@@ -88,8 +135,8 @@ def test_list_articles_with_data(client):
 def test_filter_by_min_score(client):
     """Test filtering articles by minimum score."""
     db = TestingSessionLocal()
-    
-    now = datetime.utcnow()
+
+    now = datetime.now(timezone.utc)
     article = Article(
         url="https://example.com/article1",
         title="Test Article",
@@ -129,8 +176,8 @@ def test_filter_by_min_score(client):
 def test_filter_by_ticker(client):
     """Test filtering articles by ticker."""
     db = TestingSessionLocal()
-    
-    now = datetime.utcnow()
+
+    now = datetime.now(timezone.utc)
     article = Article(
         url="https://example.com/article1",
         title="Test Article",

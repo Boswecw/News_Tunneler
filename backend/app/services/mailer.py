@@ -159,10 +159,13 @@ def generate_report_id(session_label: str, recipients: List[str]) -> str:
     et_tz = ZoneInfo("America/New_York")
     now_et = datetime.now(et_tz)
     date_str = now_et.strftime("%Y%m%d")
-    
+
+    # Extract first word from session label (e.g., "Pre-Market" -> "pre")
+    session_part = session_label.lower().split("-")[0]
+
     recipients_hash = hashlib.md5(",".join(sorted(recipients)).encode()).hexdigest()[:8]
-    
-    return f"{date_str}_{session_label.lower().replace('-', '_')}_{recipients_hash}"
+
+    return f"{date_str}_{session_part}_{recipients_hash}"
 
 
 def check_idempotency(report_id: str) -> bool:

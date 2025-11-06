@@ -1,6 +1,6 @@
 """Score model for article scoring."""
 from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey, Index
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import Base, TimestampMixin
 
 
@@ -17,7 +17,7 @@ class Score(Base, TimestampMixin):
     sentiment = Column(Float, default=0.0, nullable=False)
     liquidity = Column(Float, default=0.0, nullable=False)
     total = Column(Float, default=0.0, nullable=False, index=True)
-    computed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     __table_args__ = (
         Index("idx_score_total", "total"),

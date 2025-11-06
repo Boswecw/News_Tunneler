@@ -5,7 +5,7 @@ Integrates ML predictions into signal generation and scoring.
 """
 import logging
 from typing import Dict, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.db import get_db_context
 from app.models.ml_model import MLModel
 from app.ml.advanced_models import AdvancedMLTrainer
@@ -102,7 +102,7 @@ def enhance_features_with_ml(
         sentiment = base_features.get('sentiment', 0.0)
         magnitude = base_features.get('magnitude', 3.0)
         credibility = base_features.get('credibility', 3.0)
-        
+
         # Get all engineered features
         engineered = feature_store.get_all_features(
             symbol=symbol,
@@ -110,7 +110,7 @@ def enhance_features_with_ml(
             magnitude=magnitude,
             credibility=credibility,
             base_features=base_features,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
         
         # Merge engineered features

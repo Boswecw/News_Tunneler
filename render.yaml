@@ -50,10 +50,15 @@ services:
           property: password
 
       # Caching / Background Services
-      - key: REDIS_HOST
-        sync: false
-      - key: REDIS_PORT
-        value: 6379
+      # NOTE: Redis is optional for basic functionality but recommended for production
+      # Render doesn't offer free Redis - use Upstash (free tier) or Redis Labs
+      # Instructions: https://upstash.com/ -> Create Redis database -> Copy REDIS_URL
+      - key: REDIS_URL
+        sync: false  # Add manually: redis://default:password@host:port
+      - key: CELERY_BROKER_URL
+        sync: false  # Same as REDIS_URL if using Redis
+      - key: CELERY_RESULT_BACKEND
+        sync: false  # Same as REDIS_URL if using Redis
 
       # JWT Authentication
       - key: JWT_SECRET_KEY

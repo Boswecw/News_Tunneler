@@ -1,0 +1,207 @@
+groups:
+  - name: application_alerts
+    interval: 30s
+    rules:
+      # Backend health check
+      - alert: BackendDown
+        expr: up{job="news-tunneler-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: backend
+        annotations:
+          summary: "Backend service is down"
+          description: "The News Tunneler backend has been down for more than 1 minute."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="news-tunneler-backend",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="news-tunneler-backend"}[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "High error rate detected"
+          description: "More than 5% of requests are returning 5xx errors for the last 5 minutes."
+
+      # Slow response times
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_seconds_bucket{job="news-tunneler-backend"}[5m])
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is above 2 seconds for the last 10 minutes."
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes{job="news-tunneler-backend"}
+            /
+            node_memory_MemTotal_bytes
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "High memory usage"
+          description: "Backend is using more than 80% of available memory."
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="news-tunneler-backend"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: backend
+        annotations:
+          summary: "High CPU usage"
+          description: "Backend CPU usage is above 80% for the last 10 minutes."
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # PostgreSQL down
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL has been down for more than 1 minute."
+
+      # Too many connections
+      - alert: PostgreSQLTooManyConnections
+        expr: |
+          sum(pg_stat_activity_count) > (pg_settings_max_connections * 0.8)
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL connection usage high"
+          description: "PostgreSQL is using more than 80% of max connections."
+
+      # Slow queries
+      - alert: PostgreSQLSlowQueries
+        expr: |
+          rate(pg_stat_database_blk_read_time[5m]) > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "High block read time indicates slow queries."
+
+      # Database size growing fast
+      - alert: PostgreSQLDatabaseSizeGrowth
+        expr: |
+          (
+            pg_database_size_bytes
+            - pg_database_size_bytes offset 1h
+          ) / pg_database_size_bytes offset 1h > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL database growing quickly"
+          description: "Database size increased by more than 20% in the last hour."
+
+  - name: redis_alerts
+    interval: 30s
+    rules:
+      # Redis down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis has been down for more than 1 minute."
+
+      # High memory usage
+      - alert: RedisHighMemoryUsage
+        expr: |
+          (
+            redis_memory_used_bytes
+            /
+            redis_memory_max_bytes
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis is using more than 90% of max memory."
+
+      # Too many connections
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: cache
+        annotations:
+          summary: "Too many Redis connections"
+          description: "Redis has more than 100 concurrent connections."
+
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # Host down
+      - alert: HostDown
+        expr: up{job="node"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Host is down"
+          description: "Node exporter has been down for more than 1 minute."
+
+      # High disk usage
+      - alert: HighDiskUsage
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"}
+            /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining on root partition."
+
+      # High load average
+      - alert: HighLoadAverage
+        expr: node_load1 > (count(node_cpu_seconds_total{mode="idle"}) * 1.5)
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High system load"
+          description: "1-minute load average is above 1.5x the number of CPUs."

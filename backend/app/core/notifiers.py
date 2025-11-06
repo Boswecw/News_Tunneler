@@ -3,7 +3,7 @@ import httpx
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.core.config import get_settings
 from app.core.logging import logger
 
@@ -17,10 +17,10 @@ DEBOUNCE_WINDOW = timedelta(hours=1)
 def should_notify(url: str) -> bool:
     """Check if we should notify for this URL (debounce)."""
     last_notified = _debounce_cache.get(url)
-    if last_notified and datetime.utcnow() - last_notified < DEBOUNCE_WINDOW:
+    if last_notified and datetime.now(timezone.utc) - last_notified < DEBOUNCE_WINDOW:
         return False
-    
-    _debounce_cache[url] = datetime.utcnow()
+
+    _debounce_cache[url] = datetime.now(timezone.utc)
     return True
 
 
@@ -45,7 +45,7 @@ async def send_slack_alert(title: str, summary: str, url: str, score: float) -> 
                     "elements": [
                         {
                             "type": "mrkdwn",
-                            "text": f"Score: {score:.1f} | {datetime.utcnow().isoformat()}",
+                            "text": f"Score: {score:.1f} | {datetime.now(timezone.utc).isoformat()}",
                         }
                     ],
                 },
@@ -79,7 +79,7 @@ News Alert (Score: {score:.1f})
 Title: {title}
 Summary: {summary}
 URL: {url}
-Time: {datetime.utcnow().isoformat()}
+Time: {datetime.now(timezone.utc).isoformat()}
 """
 
         html = f"""
@@ -89,7 +89,7 @@ Time: {datetime.utcnow().isoformat()}
     <p><strong>{title}</strong></p>
     <p>{summary}</p>
     <p><a href="{url}">Read more</a></p>
-    <p><small>{datetime.utcnow().isoformat()}</small></p>
+    <p><small>{datetime.now(timezone.utc).isoformat()}</small></p>
   </body>
 </html>
 """
@@ -136,7 +136,7 @@ def send_daily_digest(articles: list[dict], digest_type: str = "Daily") -> bool:
         # Build text version
         text_parts = [
             f"News Tunneler {digest_type} Digest",
-            f"Date: {datetime.utcnow().strftime('%Y-%m-%d')}",
+            f"Date: {datetime.now(timezone.utc).strftime('%Y-%m-%d')}",
             f"Total Bullish Articles: {len(articles)}",
             f"",
             "=" * 80,
@@ -175,7 +175,7 @@ def send_daily_digest(articles: list[dict], digest_type: str = "Daily") -> bool:
             "<body>",
             "<div class='header'>",
             f"  <h1>📰 News Tunneler {digest_type} Digest</h1>",
-            f"  <p>Date: {datetime.utcnow().strftime('%B %d, %Y')}</p>",
+            f"  <p>Date: {datetime.now(timezone.utc).strftime('%B %d, %Y')}</p>",
             f"  <p>Total Bullish Opportunities: {len(articles)}</p>",
             "</div>",
         ]
@@ -207,7 +207,7 @@ def send_daily_digest(articles: list[dict], digest_type: str = "Daily") -> bool:
         html_parts.extend([
             "<div style='margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 4px; text-align: center;'>",
             f"  <p style='color: #666; margin: 0;'>This is your {digest_type.lower()} digest from News Tunneler</p>",
-            f"  <p style='color: #999; font-size: 0.9em; margin: 5px 0 0 0;'>Generated at {datetime.utcnow().strftime('%I:%M %p UTC')}</p>",
+            f"  <p style='color: #999; font-size: 0.9em; margin: 5px 0 0 0;'>Generated at {datetime.now(timezone.utc).strftime('%I:%M %p UTC')}</p>",
             "</div>",
             "</body>",
             "</html>",
@@ -265,7 +265,7 @@ def send_morning_digest_job() -> None:
             min_alert_score = setting.min_alert_score if setting else settings.llm_min_alert_score
 
             # Get articles from the past 12 hours with score >= min_alert_score
-            cutoff_time = datetime.utcnow() - timedelta(hours=12)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=12)
 
             results = (
                 db.query(Article, Score)
@@ -349,7 +349,7 @@ def send_evening_digest_job() -> None:
 
             # Get articles from the past 6 hours (11 AM - 5 PM is 6 hours)
             # Using 6 hours to avoid overlap with morning digest
-            cutoff_time = datetime.utcnow() - timedelta(hours=6)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=6)
 
             results = (
                 db.query(Article, Score)

@@ -3,7 +3,7 @@ RSS Polling Tasks
 
 Celery tasks for asynchronous RSS feed polling and processing.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List
 from app.core.celery_app import celery_app
 from app.core.structured_logging import get_logger
@@ -194,7 +194,7 @@ def cleanup_old_signals(self, days_old: int = 30) -> Dict[str, Any]:
         db = SessionLocal()
         try:
             # Calculate cutoff date
-            cutoff_date = datetime.utcnow() - timedelta(days=days_old)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_old)
             
             # Delete old signals
             deleted = db.query(Signal).filter(

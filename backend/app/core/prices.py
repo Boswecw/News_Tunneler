@@ -2,7 +2,7 @@
 import os
 import json
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 import httpx
 import pandas as pd
@@ -44,7 +44,7 @@ def _get_cached_data(db: Session, ticker: str, vendor: str, data_type: str) -> O
     
     if cache_entry:
         # Check if cache is still valid
-        age_seconds = (datetime.utcnow() - cache_entry.fetched_at).total_seconds()
+        age_seconds = (datetime.now(timezone.utc) - cache_entry.fetched_at).total_seconds()
         if age_seconds < CACHE_TTL:
             logger.info(f"Cache hit for {ticker} ({vendor}/{data_type}), age: {age_seconds:.0f}s")
             data = json.loads(cache_entry.payload_json)
@@ -72,7 +72,7 @@ def _save_to_cache(db: Session, ticker: str, vendor: str, data_type: str, df: pd
         vendor=vendor,
         data_type=data_type,
         payload_json=json.dumps(payload),
-        fetched_at=datetime.utcnow(),
+        fetched_at=datetime.now(timezone.utc),
     )
     
     db.add(cache_entry)

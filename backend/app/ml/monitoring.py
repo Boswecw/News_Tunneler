@@ -5,7 +5,7 @@ Tracks model performance, prediction accuracy, and data drift over time.
 """
 import logging
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import numpy as np
 from app.core.db import get_db_context
@@ -69,7 +69,7 @@ class ModelMonitor:
         """
         with get_db_context() as db:
             # Get signals with predictions and actual outcomes
-            cutoff = datetime.utcnow() - timedelta(days=days_back)
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
             
             signals = db.query(Signal).filter(
                 Signal.created_at >= cutoff,
@@ -119,7 +119,7 @@ class ModelMonitor:
                 'precision': float(precision),
                 'recall': float(recall),
                 'f1': float(f1),
-                'calculated_at': datetime.utcnow().isoformat()
+                'calculated_at': datetime.now(timezone.utc).isoformat()
             }
     
     def _calculate_precision(self, predictions: np.ndarray, actuals: np.ndarray) -> float:
@@ -163,15 +163,15 @@ class ModelMonitor:
         """
         with get_db_context() as db:
             # Get recent signals
-            recent_cutoff = datetime.utcnow() - timedelta(days=days_back)
+            recent_cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
             recent_signals = db.query(Signal).filter(
                 Signal.created_at >= recent_cutoff,
                 Signal.features.isnot(None)
             ).all()
-            
+
             # Get reference signals
-            reference_cutoff = datetime.utcnow() - timedelta(days=reference_days)
-            reference_end = datetime.utcnow() - timedelta(days=days_back)
+            reference_cutoff = datetime.now(timezone.utc) - timedelta(days=reference_days)
+            reference_end = datetime.now(timezone.utc) - timedelta(days=days_back)
             reference_signals = db.query(Signal).filter(
                 Signal.created_at >= reference_cutoff,
                 Signal.created_at < reference_end,
@@ -226,7 +226,7 @@ class ModelMonitor:
                 'num_drifted_features': len(drifted_features),
                 'drifted_features': drifted_features,
                 'all_drift_scores': drift_scores,
-                'calculated_at': datetime.utcnow().isoformat()
+                'calculated_at': datetime.now(timezone.utc).isoformat()
             }
     
     def _extract_features(self, signals: List[Signal]) -> Dict[str, List[float]]:
@@ -270,8 +270,8 @@ class ModelMonitor:
             Dict with confidence trend data
         """
         with get_db_context() as db:
-            cutoff = datetime.utcnow() - timedelta(days=days_back)
-            
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
+
             signals = db.query(Signal).filter(
                 Signal.created_at >= cutoff,
                 Signal.features.isnot(None)
@@ -290,7 +290,7 @@ class ModelMonitor:
                 features = signal.features or {}
                 if 'ml_probability' in features:
                     # Calculate bucket
-                    days_ago = (datetime.utcnow() - signal.created_at).days
+                    days_ago = (datetime.now(timezone.utc) - signal.created_at).days
                     bucket = days_ago // bucket_size
                     
                     buckets[bucket].append(features['ml_probability'])
@@ -315,7 +315,7 @@ class ModelMonitor:
                 'bucket_size': bucket_size,
                 'num_buckets': len(trend_data),
                 'trend_data': trend_data,
-                'calculated_at': datetime.utcnow().isoformat()
+                'calculated_at': datetime.now(timezone.utc).isoformat()
             }
     
     def get_performance_summary(self, days_back: int = 7) -> Dict:
@@ -357,6 +357,6 @@ class ModelMonitor:
             'accuracy_metrics': accuracy_metrics,
             'drift_metrics': drift_metrics,
             'confidence_trend': confidence_trend,
-            'generated_at': datetime.utcnow().isoformat()
+            'generated_at': datetime.now(timezone.utc).isoformat()
         }
 

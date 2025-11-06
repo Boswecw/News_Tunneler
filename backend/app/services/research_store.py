@@ -5,7 +5,7 @@ Captures frozen feature snapshots at article publish time
 to guarantee no look-ahead bias.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from sqlalchemy.orm import Session
@@ -50,7 +50,7 @@ def store_features(
             symbol=symbol.upper(),
             published_at=published_at,
             features_json=json.dumps(features),
-            created_at=datetime.utcnow().isoformat()
+            created_at=datetime.now(timezone.utc).isoformat()
         )
         
         db.merge(feature_row)

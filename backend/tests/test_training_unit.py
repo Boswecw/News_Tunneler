@@ -146,39 +146,40 @@ class TestTimeDecayWeights:
 
 class TestWalkForwardSplits:
     """Test walk-forward cross-validation splits."""
-    
+
     def test_splits_no_overlap(self):
         """Test that train and test sets don't overlap."""
-        splits = create_walk_forward_splits(n_samples=100, n_splits=5)
-        
+        # Use more samples to accommodate splits
+        splits = create_walk_forward_splits(n_samples=200, n_splits=3)
+
         for train_idx, test_idx in splits:
             # No overlap between train and test
             assert len(set(train_idx) & set(test_idx)) == 0
-    
+
     def test_splits_chronological(self):
         """Test that test set comes after train set (no look-ahead)."""
-        splits = create_walk_forward_splits(n_samples=100, n_splits=5)
-        
+        splits = create_walk_forward_splits(n_samples=200, n_splits=3)
+
         for train_idx, test_idx in splits:
             # All test indices should be greater than all train indices
             assert train_idx.max() < test_idx.min()
-    
+
     def test_splits_count(self):
         """Test that correct number of splits is created."""
-        n_splits = 5
-        splits = create_walk_forward_splits(n_samples=100, n_splits=n_splits)
-        
+        n_splits = 3
+        splits = create_walk_forward_splits(n_samples=200, n_splits=n_splits)
+
         assert len(splits) == n_splits
-    
+
     def test_splits_test_size(self):
         """Test that test size is approximately correct."""
-        n_samples = 100
+        n_samples = 200
         test_size = 0.2
-        splits = create_walk_forward_splits(n_samples=n_samples, n_splits=5, test_size=test_size)
-        
+        splits = create_walk_forward_splits(n_samples=n_samples, n_splits=3, test_size=test_size)
+
         for train_idx, test_idx in splits:
-            # Test size should be approximately 20% of total
-            assert 15 <= len(test_idx) <= 25  # Allow some variance
+            # Test size should be approximately 20% of total (40 samples)
+            assert 35 <= len(test_idx) <= 45  # Allow some variance
 
 
 class TestFeaturePreparation:

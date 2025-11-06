@@ -7,7 +7,7 @@ Provides a single source of truth for all trained price prediction models.
 import json
 import hashlib
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, asdict
 import sys
@@ -129,7 +129,7 @@ class ModelRegistry:
             param_hash=param_hash,
             r2_score=r2_score,
             n_observations=n_observations,
-            trained_at=datetime.utcnow().isoformat() + "Z",
+            trained_at=datetime.now(timezone.utc).isoformat() + "Z",
             model_path=model_path,
             python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
             sklearn_version=sklearn.__version__,

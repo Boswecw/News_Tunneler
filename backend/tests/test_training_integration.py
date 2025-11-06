@@ -159,11 +159,11 @@ class TestTrainingEndToEnd:
         
         assert response.status_code == 200
         data = response.json()
-        
-        # Check registry
-        registry = ModelRegistry(pathlib.Path("backend/models/registry.json"))
+
+        # Check registry (path relative to backend directory)
+        registry = ModelRegistry(pathlib.Path("models/registry.json"))
         metadata = registry.get_model("NVDA", "5y")
-        
+
         assert metadata is not None
         assert metadata.ticker == "NVDA"
         assert metadata.mode == "5y"

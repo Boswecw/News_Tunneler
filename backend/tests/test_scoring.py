@@ -1,6 +1,6 @@
 """Tests for scoring logic."""
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from app.core.scoring import (
     score_catalyst,
     score_novelty,
@@ -35,19 +35,19 @@ class TestNoveltyScoring:
 
     def test_recent_article(self):
         """Test article < 6h old returns 5."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         recent = now - timedelta(hours=3)
         assert score_novelty(recent) == 5.0
 
     def test_moderately_recent_article(self):
         """Test article < 24h old returns 3."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         moderately_recent = now - timedelta(hours=12)
         assert score_novelty(moderately_recent) == 3.0
 
     def test_old_article(self):
         """Test article >= 24h old returns 1."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         old = now - timedelta(days=2)
         assert score_novelty(old) == 1.0
 

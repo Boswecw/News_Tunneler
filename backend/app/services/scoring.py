@@ -8,7 +8,7 @@ import os
 import json
 import math
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.logging import logger
 
 # Path to model weights file
@@ -327,7 +327,7 @@ def strong_score(features: Dict) -> Dict:
         "score": score,
         "label": label,
         "reasons": reasons,
-        "timestamp": int(datetime.utcnow().timestamp() * 1000),
+        "timestamp": int(datetime.now(timezone.utc).timestamp() * 1000),
         "raw_score": round(v, 2),  # For debugging/calibration
     }
     

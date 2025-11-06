@@ -7,7 +7,7 @@ Builds daily opportunities email reports by:
 3. Applying filters and ranking by composite score
 4. Building template context for email rendering
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
@@ -53,13 +53,13 @@ def fetch_latest_opportunities(db: Session, since_hours: int = 24) -> List[Dict]
     Returns:
         List of opportunity dicts
     """
-    cutoff = datetime.utcnow() - timedelta(hours=since_hours)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=since_hours)
     
     opportunities = (
         db.query(OpportunityCache)
         .filter(
             OpportunityCache.cached_at >= cutoff,
-            OpportunityCache.expires_at > datetime.utcnow()
+            OpportunityCache.expires_at > datetime.now(timezone.utc)
         )
         .order_by(OpportunityCache.composite_score.desc())
         .all()
@@ -123,22 +123,25 @@ def apply_filters(
     opportunities: List[Dict],
     min_confidence: float = 0.70,
     min_expected_return_pct: float = 1.0,
-    min_r2: float = 0.95
+    min_r2: float = 0.95,
+    max_per_side: Optional[int] = None
 ) -> Tuple[List[Dict], List[Dict]]:
     """
     Apply filters and split into buy/sell buckets.
-    
+
     Args:
         opportunities: List of enriched opportunities
         min_confidence: Minimum confidence threshold
         min_expected_return_pct: Minimum absolute expected return %
         min_r2: Minimum R² score
-    
+        max_per_side: Maximum tickers per side (buy/sell). If None, uses settings value.
+
     Returns:
         Tuple of (buys, sells) lists, sorted by composite_score desc
     """
-    settings = get_settings()
-    max_per_side = getattr(settings, 'report_max_tickers_per_side', 8)
+    if max_per_side is None:
+        settings = get_settings()
+        max_per_side = getattr(settings, 'report_max_tickers_per_side', 8)
     
     buys = []
     sells = []
@@ -158,22 +161,27 @@ def apply_filters(
         if r2_score < min_r2:
             continue
         
-        # Infer expected return from stance or composite score
-        # (In real system, this would come from prediction model)
-        stance = opp.get("llm_stance", "NEUTRAL")
-        expected_return = 0.0
-        
-        if stance == "BULLISH":
-            expected_return = confidence * 5.0  # Estimate: 0-5% return
-        elif stance == "BEARISH":
-            expected_return = -confidence * 5.0  # Estimate: 0-5% loss
-        
+        # Use provided expected_return_pct or infer from stance
+        expected_return = opp.get("expected_return_pct")
+
+        if expected_return is None:
+            # Infer from stance (fallback for when not provided)
+            stance = opp.get("llm_stance", "NEUTRAL")
+            if stance == "BULLISH":
+                expected_return = confidence * 5.0  # Estimate: 0-5% return
+            elif stance == "BEARISH":
+                expected_return = -confidence * 5.0  # Estimate: 0-5% loss
+            else:
+                expected_return = 0.0
+
+            # Set it in the opportunity dict
+            opp["expected_return_pct"] = expected_return
+
         # Skip if return too small
         if abs(expected_return) < min_expected_return_pct:
             continue
-        
-        # Add expected return and recompute composite score
-        opp["expected_return_pct"] = expected_return
+
+        # Recompute composite score with actual expected return
         opp["composite_score"] = compute_composite_score(confidence, expected_return, r2_score)
         
         # Bucket by direction
@@ -223,7 +231,7 @@ def build_market_snapshot(opportunities: List[Dict]) -> Dict:
     catalysts = []
     for opp in opportunities[:10]:  # Top 10
         title = opp.get("article_title", "")
-        if title and len(title) > 20:
+        if title and len(title) >= 10:  # Require at least 10 chars
             catalysts.append(title[:80])
     
     # Get unique catalysts (limit to 5)

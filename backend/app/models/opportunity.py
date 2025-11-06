@@ -1,7 +1,7 @@
 """
 Opportunity cache model for persisting top opportunities across restarts.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime
 from app.models.base import Base
 
@@ -29,7 +29,7 @@ class OpportunityCache(Base):
     article_id = Column(Integer, nullable=True)
     article_title = Column(String(500), nullable=True)
     signal_timestamp = Column(Float, nullable=True)
-    cached_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    cached_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     expires_at = Column(DateTime, nullable=False, index=True)
     
     def to_dict(self):

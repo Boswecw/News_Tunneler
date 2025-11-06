@@ -1,5 +1,5 @@
 """Price cache model for storing fetched price data."""
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, Index
 from app.models.base import Base
 
@@ -14,7 +14,7 @@ class PriceCache(Base):
     vendor = Column(String, nullable=False)  # alphavantage, finnhub, yahoo
     data_type = Column(String, nullable=False)  # daily, intraday
     payload_json = Column(Text, nullable=False)  # JSON string of price data
-    fetched_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    fetched_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Composite index for efficient lookups
     __table_args__ = (

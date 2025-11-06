@@ -3,7 +3,7 @@ Email Digest Tasks
 
 Celery tasks for sending daily/weekly email digests.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List
 from app.core.celery_app import celery_app
 from app.core.structured_logging import get_logger
@@ -41,7 +41,7 @@ def send_daily_digest(self) -> Dict[str, Any]:
         db = SessionLocal()
         try:
             # Get top signals from last 24 hours
-            cutoff_time = datetime.utcnow() - timedelta(hours=24)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
             
             top_signals = db.query(Signal).filter(
                 Signal.created_at >= cutoff_time
@@ -126,7 +126,7 @@ def send_weekly_digest(self) -> Dict[str, Any]:
         db = SessionLocal()
         try:
             # Get top signals from last 7 days
-            cutoff_time = datetime.utcnow() - timedelta(days=7)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(days=7)
             
             top_signals = db.query(Signal).filter(
                 Signal.created_at >= cutoff_time
@@ -255,17 +255,17 @@ def send_alert(self, signal_id: int, alert_type: str = "high_score") -> Dict[str
 def _format_digest(signals: List, digest_type: str) -> str:
     """
     Format signals into a digest email.
-    
+
     Args:
         signals: List of Signal objects
         digest_type: Type of digest (Daily, Weekly)
-        
+
     Returns:
         Formatted digest content
     """
     content = f"""
     📊 News Tunneler - {digest_type} Digest
-    Generated: {datetime.utcnow().isoformat()}
+    Generated: {datetime.now(timezone.utc).isoformat()}
     
     Top {len(signals)} Signals:
     """

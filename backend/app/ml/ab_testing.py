@@ -6,7 +6,7 @@ Allows comparing multiple model versions in production with traffic splitting.
 import logging
 import hashlib
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import numpy as np
 from app.core.db import get_db_context
@@ -131,7 +131,7 @@ class ABTest:
         """
         with get_db_context() as db:
             # Get signals with predictions and outcomes
-            cutoff = datetime.utcnow() - timedelta(days=days_back)
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
             
             signals = db.query(Signal).filter(
                 Signal.created_at >= cutoff,
@@ -195,7 +195,7 @@ class ABTest:
                 'significance': significance,
                 'winner': winner,
                 'recommendation': self._get_recommendation(winner, significance),
-                'calculated_at': datetime.utcnow().isoformat()
+                'calculated_at': datetime.now(timezone.utc).isoformat()
             }
     
     def _calculate_metrics(self, signals: List[Signal], trainer: AdvancedMLTrainer) -> Dict:
@@ -310,8 +310,8 @@ class ABTest:
             Dict with traffic distribution
         """
         with get_db_context() as db:
-            cutoff = datetime.utcnow() - timedelta(days=days_back)
-            
+            cutoff = datetime.now(timezone.utc) - timedelta(days=days_back)
+
             signals = db.query(Signal).filter(
                 Signal.created_at >= cutoff
             ).all()

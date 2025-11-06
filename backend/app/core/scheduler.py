@@ -1,6 +1,6 @@
 """Background scheduler for polling feeds."""
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -197,7 +197,7 @@ async def poll_feeds() -> None:
                         )
                 
                 # Update last_fetched_at
-                source.last_fetched_at = datetime.utcnow()
+                source.last_fetched_at = datetime.now(timezone.utc)
                 
             except Exception as e:
                 logger.error(f"Error polling source {source.name}: {e}")
@@ -418,7 +418,7 @@ def refresh_bounds_for_watchlist() -> None:
             from sqlalchemy import distinct
 
             # Get tickers with recent signals (last 24 hours)
-            cutoff = datetime.utcnow() - timedelta(hours=24)
+            cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
             cutoff_ms = int(cutoff.timestamp() * 1000)
 
             tickers = db.query(distinct(Signal.symbol)).filter(
@@ -707,7 +707,7 @@ def cleanup_old_articles() -> None:
 
         with get_db_context() as db:
             # Calculate cutoff time (2 days ago)
-            cutoff_time = datetime.utcnow() - timedelta(days=2)
+            cutoff_time = datetime.now(timezone.utc) - timedelta(days=2)
 
             # Find articles older than 2 days
             old_articles = db.query(Article).filter(
