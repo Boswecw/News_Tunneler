@@ -3,16 +3,22 @@ Sentry Error Tracking Integration
 
 Configures Sentry SDK for error tracking, performance monitoring, and alerting.
 """
-import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
-from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
-from sentry_sdk.integrations.redis import RedisIntegration
-from sentry_sdk.integrations.celery import CeleryIntegration
-from sentry_sdk.integrations.logging import LoggingIntegration
 import logging
-
 from app.core.config import get_settings
 from app.core.logging import logger
+
+# Make Sentry imports optional (lazy load)
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.logging import LoggingIntegration
+    SENTRY_AVAILABLE = True
+except ImportError:
+    SENTRY_AVAILABLE = False
+    logger.warning("sentry-sdk not installed, Sentry integration disabled")
 
 
 def setup_sentry():
@@ -27,6 +33,10 @@ def setup_sentry():
     - Custom context (user, tags, extras)
     - Breadcrumbs for debugging
     """
+    if not SENTRY_AVAILABLE:
+        logger.info("Sentry SDK not available, skipping initialization")
+        return
+
     settings = get_settings()
 
     # Skip if SENTRY_DSN not configured
