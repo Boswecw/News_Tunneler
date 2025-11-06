@@ -56,7 +56,8 @@ class Settings(BaseSettings):
     polygon_api_key: str = ""
 
     # Redis Cache (Phase 1 Improvement)
-    redis_enabled: bool = True
+    redis_url: str = ""  # Redis connection string (e.g., redis://localhost:6379/0)
+    redis_enabled: bool = False  # Enable/disable Redis (auto-enabled if redis_url is set)
     redis_host: str = "localhost"
     redis_port: int = 6379
     redis_db: int = 0
@@ -155,6 +156,11 @@ class Settings(BaseSettings):
     def bounds_quantiles_list(self) -> list[float]:
         """Parse bounds_quantiles string to list of floats."""
         return [float(q.strip()) for q in self.bounds_quantiles.split(',') if q.strip()]
+
+    @property
+    def is_redis_available(self) -> bool:
+        """Check if Redis should be enabled (redis_url is set OR redis_enabled is explicitly True)."""
+        return bool(self.redis_url) or self.redis_enabled
 
 
 @lru_cache()

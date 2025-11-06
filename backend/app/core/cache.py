@@ -15,27 +15,36 @@ redis_client: Optional[Redis] = None
 def get_redis_client() -> Optional[Redis]:
     """Get Redis client with lazy initialization."""
     global redis_client
-    
-    if not settings.redis_enabled:
+
+    if not settings.is_redis_available:
         return None
-    
+
     if redis_client is None:
         try:
-            redis_client = Redis(
-                host=settings.redis_host,
-                port=settings.redis_port,
-                db=settings.redis_db,
-                decode_responses=True,
-                socket_connect_timeout=5,
-                socket_timeout=5,
-            )
+            # Use redis_url if available, otherwise fallback to host/port
+            if settings.redis_url:
+                redis_client = Redis.from_url(
+                    settings.redis_url,
+                    decode_responses=True,
+                    socket_connect_timeout=5,
+                    socket_timeout=5,
+                )
+            else:
+                redis_client = Redis(
+                    host=settings.redis_host,
+                    port=settings.redis_port,
+                    db=settings.redis_db,
+                    decode_responses=True,
+                    socket_connect_timeout=5,
+                    socket_timeout=5,
+                )
             # Test connection
             redis_client.ping()
-            logger.info(f"✅ Redis connected: {settings.redis_host}:{settings.redis_port}")
+            logger.info(f"✅ Redis connected: {settings.redis_url or f'{settings.redis_host}:{settings.redis_port}'}")
         except (RedisConnectionError, Exception) as e:
             logger.warning(f"⚠️ Redis connection failed: {e}. Caching disabled.")
             redis_client = None
-    
+
     return redis_client
 
 
