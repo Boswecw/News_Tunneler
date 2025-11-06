@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.config import get_settings
-from app.core.db import engine
 from app.core.logging import logger
 from app.core.scheduler import start_scheduler, stop_scheduler
 from app.core.structured_logging import setup_structured_logging, get_logger
@@ -11,7 +10,6 @@ from app.core.memory_cache import cache_cleanup_task
 from app.core.secrets import validate_secrets_on_startup
 from app.core.monitoring import setup_monitoring
 from app.core.sentry import setup_sentry
-from app.models import Base
 from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, ml, research, training, predict_bounds, auth
 from app.api import settings as settings_router
 from app.middleware.rate_limit import limiter, custom_rate_limit_handler
@@ -34,25 +32,39 @@ structured_logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown."""
-    # Startup
-    structured_logger.info("Starting news-tunneler backend...", extra={'version': '1.0.0'})
+    try:
+        # Startup
+        structured_logger.info("Starting news-tunneler backend...", extra={'version': '1.0.0'})
 
-    # Setup Sentry error tracking (before other initialization)
-    setup_sentry()
+        # Setup Sentry error tracking (before other initialization)
+        structured_logger.info("Setting up Sentry...")
+        setup_sentry()
 
-    # Validate secrets
-    validate_secrets_on_startup(config.env)
+        # Validate secrets
+        structured_logger.info("Validating secrets...")
+        validate_secrets_on_startup(config.env)
 
-    Base.metadata.create_all(bind=engine)
-    structured_logger.info("Database tables created/verified")
-    start_scheduler()
-    structured_logger.info("Scheduler started")
+        # Note: Database migrations are handled by Alembic (run before app starts)
+        # Base.metadata.create_all() is not needed and can conflict with migrations
+        structured_logger.info("Database ready (migrations handled by Alembic)")
 
-    # Start cache cleanup task
-    asyncio.create_task(cache_cleanup_task())
-    structured_logger.info("Cache cleanup task started")
+        # Start scheduler
+        structured_logger.info("Starting scheduler...")
+        start_scheduler()
+        structured_logger.info("Scheduler started")
 
-    yield
+        # Start cache cleanup task
+        structured_logger.info("Starting cache cleanup task...")
+        asyncio.create_task(cache_cleanup_task())
+        structured_logger.info("Cache cleanup task started")
+
+        structured_logger.info("✅ Application startup complete!")
+
+        yield
+
+    except Exception as e:
+        structured_logger.error(f"❌ Startup failed: {e}", exc_info=True)
+        raise
 
     # Shutdown
     structured_logger.info("Shutting down news-tunneler backend...")
