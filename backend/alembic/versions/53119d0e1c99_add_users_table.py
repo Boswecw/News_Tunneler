@@ -17,6 +17,21 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Detect database dialect
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+
+    # Use appropriate server_default for timestamps
+    if dialect_name == 'postgresql':
+        timestamp_default = sa.text('now()')
+        # Use proper ENUM for PostgreSQL
+        role_type = sa.Enum('admin', 'analyst', 'viewer', name='userrole')
+    else:
+        # SQLite uses CURRENT_TIMESTAMP
+        timestamp_default = sa.text('CURRENT_TIMESTAMP')
+        # Use VARCHAR for SQLite (no native ENUM support)
+        role_type = sa.String(7)
+
     # Create users table
     op.create_table(
         'users',
@@ -25,11 +40,11 @@ def upgrade() -> None:
         sa.Column('username', sa.String(), nullable=False),
         sa.Column('hashed_password', sa.String(), nullable=False),
         sa.Column('full_name', sa.String(), nullable=True),
-        sa.Column('role', sa.Enum('admin', 'analyst', 'viewer', name='userrole'), nullable=False),
+        sa.Column('role', role_type, nullable=False),
         sa.Column('is_active', sa.Boolean(), nullable=False),
         sa.Column('is_verified', sa.Boolean(), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=timestamp_default, nullable=False),
+        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=timestamp_default, nullable=False),
         sa.Column('last_login', sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint('id')
     )
@@ -50,5 +65,7 @@ def downgrade() -> None:
     op.drop_table('users')
 
     # Drop enum type (PostgreSQL only)
-    op.execute('DROP TYPE IF EXISTS userrole')
+    bind = op.get_bind()
+    if bind.dialect.name == 'postgresql':
+        op.execute('DROP TYPE IF EXISTS userrole')
 
