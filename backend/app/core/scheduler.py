@@ -695,9 +695,9 @@ def start_scheduler() -> None:
     scheduler.start()
     logger.info("Scheduler started with RSS polling, morning digest (11 AM ET), evening digest (5 PM ET), cleanup (1 AM ET), bulk LLM analysis (4x daily), predictive training (4:10 PM ET Mon-Fri), research auto-labeling (2 AM ET), opportunities refresh (every 15 min), daily opportunities report (7:00 AM ET Mon-Fri), and intraday bounds refresh (every 1 min during market hours)")
 
-    # Run first poll immediately in background
-    import threading
-    threading.Thread(target=_run_poll_feeds_sync, daemon=True).start()
+    # Note: Removed immediate feed poll on startup to avoid blocking deployment
+    # The first poll will run according to the schedule interval
+    # This prevents potential network timeouts from blocking app startup
 
 
 def cleanup_old_articles() -> None:

@@ -48,10 +48,13 @@ async def lifespan(app: FastAPI):
         # Base.metadata.create_all() is not needed and can conflict with migrations
         structured_logger.info("Database ready (migrations handled by Alembic)")
 
-        # Start scheduler
-        structured_logger.info("Starting scheduler...")
-        start_scheduler()
-        structured_logger.info("Scheduler started")
+        # Start scheduler (optional, can be disabled for debugging)
+        if config.scheduler_enabled:
+            structured_logger.info("Starting scheduler...")
+            start_scheduler()
+            structured_logger.info("Scheduler started")
+        else:
+            structured_logger.warning("Scheduler disabled (SCHEDULER_ENABLED=false)")
 
         # Start cache cleanup task
         structured_logger.info("Starting cache cleanup task...")
@@ -68,7 +71,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     structured_logger.info("Shutting down news-tunneler backend...")
-    stop_scheduler()
+    if config.scheduler_enabled:
+        stop_scheduler()
     structured_logger.info("Shutdown complete")
 
 

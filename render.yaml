@@ -82,6 +82,10 @@ services:
       - key: PROMETHEUS_PORT
         value: "9090"
 
+      # Scheduler (temporarily disabled for debugging deployment)
+      - key: SCHEDULER_ENABLED
+        value: "false"
+
       # API Keys (synced manually)
       - key: OPENAI_API_KEY
         sync: false

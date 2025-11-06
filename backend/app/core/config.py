@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     sentry_dsn: str = ""  # Sentry error tracking
 
+    # Scheduler
+    scheduler_enabled: bool = True  # Enable background scheduler for RSS polling
+
     class Config:
         env_file = ".env"
         case_sensitive = False
