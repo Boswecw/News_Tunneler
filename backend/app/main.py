@@ -10,9 +10,10 @@ from app.core.memory_cache import cache_cleanup_task
 from app.core.secrets import validate_secrets_on_startup
 from app.core.monitoring import setup_monitoring
 from app.core.sentry import setup_sentry
-# Note: Temporarily excluding 'ml' router to avoid heavy torch/transformers imports at startup
+# Note: Temporarily excluding 'ml', 'training', 'predict_bounds' routers to avoid heavy ML library imports
+# These routers import xgboost, lightgbm, torch, transformers which take 30+ seconds to load
 # This speeds up deployment. Can add back later with lazy imports.
-from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, research, training, predict_bounds, auth
+from app.api import articles, sources, websocket, analysis, backtest, stream, signals, admin, research, auth
 from app.api import settings as settings_router
 from app.middleware.rate_limit import limiter, custom_rate_limit_handler
 from app.middleware.request_id import RequestIDMiddleware
@@ -121,8 +122,8 @@ app.include_router(signals.router)
 app.include_router(admin.router)
 # app.include_router(ml.router)  # Temporarily disabled - heavy ML imports cause deployment timeout
 app.include_router(research.router)
-app.include_router(training.router)
-app.include_router(predict_bounds.router)
+# app.include_router(training.router)  # Temporarily disabled - imports xgboost/lightgbm
+# app.include_router(predict_bounds.router)  # Temporarily disabled - imports xgboost/lightgbm
 
 
 @app.get("/health")
