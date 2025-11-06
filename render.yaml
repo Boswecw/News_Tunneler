@@ -9,7 +9,9 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Temporarily using minimal app to test deployment
+    # Original: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main_minimal:app --host 0.0.0.0 --port $PORT
     envVars:
       # Core environment
       - key: PYTHON_VERSION
